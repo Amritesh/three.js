@@ -134,7 +134,8 @@ Material.prototype = {
 
 			meta = {
 				textures: {},
-				images: {}
+				images: {},
+                videos: {}
 			};
 
 		}
@@ -244,9 +245,11 @@ Material.prototype = {
 
 			var textures = extractFromCache( meta.textures );
 			var images = extractFromCache( meta.images );
+            var videos = extractFromCache( meta.video );
 
 			if ( textures.length > 0 ) data.textures = textures;
 			if ( images.length > 0 ) data.images = images;
+            if ( videos.length > 0 ) data.videos = videos;
 
 		}
 

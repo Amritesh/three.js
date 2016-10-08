@@ -21,6 +21,7 @@ import { OrthographicCamera } from '../cameras/OrthographicCamera';
 import { PerspectiveCamera } from '../cameras/PerspectiveCamera';
 import { Scene } from '../scenes/Scene';
 import { Texture } from '../textures/Texture';
+import { VideoTexture } from '../textures/VideoTexture';
 import { ImageLoader } from './ImageLoader';
 import { LoadingManager, DefaultLoadingManager } from './LoadingManager';
 import { AnimationClip } from '../animation/AnimationClip';
@@ -83,8 +84,12 @@ Object.assign( ObjectLoader.prototype, {
 			if ( onLoad !== undefined ) onLoad( object );
 
 		} );
+        
+        var videos = this.parseVideos( json.videos, function() {
+            if (onLoad !== undefined) onLoad(object);
+        } );
 
-		var textures  = this.parseTextures( json.textures, images );
+		var textures  = this.parseTextures( json.textures, images , videos);
 		var materials = this.parseMaterials( json.materials, textures );
 
 		var object = this.parseObject( json.object, geometries, materials );
@@ -385,8 +390,50 @@ Object.assign( ObjectLoader.prototype, {
 		return images;
 
 	},
+    
+    parseVideos: function ( json, onLoad ) {
 
-	parseTextures: function ( json, images ) {
+		var scope = this;
+		var videos = {};
+
+		function loadVideo( url ) {
+
+			var video = document.createElement('video');
+            video.id = "video";
+            video.width = 10;
+            video.height = 10;
+            video.muted = true;
+            video.setAttribute("loop","");
+            video.src = url;
+            document.body.appendChild(video);
+            return video;
+
+		}
+
+		if ( json !== undefined && json.length > 0 ) {
+
+			var manager = new LoadingManager( onLoad );
+
+			var loader = new ImageLoader( manager );
+			loader.setCrossOrigin( this.crossOrigin );
+
+			for ( var i = 0, l = json.length; i < l; i ++ ) {
+
+				var video = json[ i ];
+				var path = /^(\/\/)|([a-z]+:(\/\/)?)/i.test( video.url ) ? video.url : scope.texturePath + video.url;
+
+				videos[ video.uuid ] = loadVideo( path );
+
+			}
+
+		}
+
+		return videos;
+
+	},
+
+
+	parseTextures: function ( json, images, videos ) {
 
 		function parseConstant( value, type ) {
 
@@ -406,19 +453,26 @@ Object.assign( ObjectLoader.prototype, {
 
 				var data = json[ i ];
 
-				if ( data.image === undefined ) {
+				if ( data.image === undefined && data.video === undefined) {
 
-					console.warn( 'THREE.ObjectLoader: No "image" specified for', data.uuid );
-
-				}
-
-				if ( images[ data.image ] === undefined ) {
-
-					console.warn( 'THREE.ObjectLoader: Undefined image', data.image );
+					console.warn( 'THREE.ObjectLoader: No "image" or "video" specified for', data.uuid );
 
 				}
 
-				var texture = new Texture( images[ data.image ] );
+				if ( images[ data.image ] === undefined && videos[ data.video ] === undefined ) {
+
+					console.warn( 'THREE.ObjectLoader: Undefined image or video', data.image );
+
+				}
+
+				if( data.image !== undefined)
+                {
+                    var texture = new Texture( images[ data.image ] );
+                }
+                if( data.video !== undefined)
+                {
+                    var texture = new VideoTexture(videos[ data.video ]);
+                }
 				texture.needsUpdate = true;
 
 				texture.uuid = data.uuid;

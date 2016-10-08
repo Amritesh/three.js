@@ -573,7 +573,8 @@ Object.assign( Object3D.prototype, EventDispatcher.prototype, {
 				geometries: {},
 				materials: {},
 				textures: {},
-				images: {}
+				images: {},
+                videos: {}
 			};
 
 			output.metadata = {
@@ -645,11 +646,13 @@ Object.assign( Object3D.prototype, EventDispatcher.prototype, {
 			var materials = extractFromCache( meta.materials );
 			var textures = extractFromCache( meta.textures );
 			var images = extractFromCache( meta.images );
+            var videos = extractFromCache( meta.videos );
 
 			if ( geometries.length > 0 ) output.geometries = geometries;
 			if ( materials.length > 0 ) output.materials = materials;
 			if ( textures.length > 0 ) output.textures = textures;
 			if ( images.length > 0 ) output.images = images;
+            if ( videos.length > 0 ) output.videos = videos;
 
 		}
 

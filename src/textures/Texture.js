@@ -136,15 +136,7 @@ Texture.prototype = {
 
 			}
 
-			if ( canvas.width > 2048 || canvas.height > 2048 ) {
-
-				return canvas.toDataURL( 'image/jpeg', 0.6 );
-
-			} else {
-
-				return canvas.toDataURL( 'image/png' );
-
-			}
+			return canvas.toDataURL( 'image/png' );
 
 		}
 

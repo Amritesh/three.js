@@ -172,12 +172,13 @@ Texture.prototype = {
 				image.uuid = _Math.generateUUID(); // UGH
 
 			}
-
+            
 			if ( meta.images[ image.uuid ] === undefined ) {
 
 				meta.images[ image.uuid ] = {
 					uuid: image.uuid,
-					url: getDataURL( image )
+					url: getDataURL( image ),
+                    name: this.name
 				};
 
 			}

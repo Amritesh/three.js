@@ -3,9 +3,10 @@ import './polyfills.js';
 export { WebGLRenderTargetCube } from './renderers/WebGLRenderTargetCube.js';
 export { WebGLRenderTarget } from './renderers/WebGLRenderTarget.js';
 export { WebGLRenderer } from './renderers/WebGLRenderer.js';
-export { WebGL2Renderer } from './renderers/WebGL2Renderer.js';
+// export { WebGL2Renderer } from './renderers/WebGL2Renderer.js';
 export { ShaderLib } from './renderers/shaders/ShaderLib.js';
 export { UniformsLib } from './renderers/shaders/UniformsLib.js';
+export { UniformsUtils } from './renderers/shaders/UniformsUtils.js';
 export { ShaderChunk } from './renderers/shaders/ShaderChunk.js';
 export { FogExp2 } from './scenes/FogExp2.js';
 export { Fog } from './scenes/Fog.js';
@@ -27,12 +28,11 @@ export { CompressedTexture } from './textures/CompressedTexture.js';
 export { CubeTexture } from './textures/CubeTexture.js';
 export { CanvasTexture } from './textures/CanvasTexture.js';
 export { DepthTexture } from './textures/DepthTexture.js';
-export { TextureIdCount, Texture } from './textures/Texture.js';
+export { Texture } from './textures/Texture.js';
 export * from './geometries/Geometries.js';
 export * from './materials/Materials.js';
-export { MaterialIdCount } from './materials/Material.js';
 export { CompressedTextureLoader } from './loaders/CompressedTextureLoader.js';
-export { BinaryTextureLoader, DataTextureLoader } from './loaders/BinaryTextureLoader.js';
+export { DataTextureLoader } from './loaders/DataTextureLoader.js';
 export { CubeTextureLoader } from './loaders/CubeTextureLoader.js';
 export { TextureLoader } from './loaders/TextureLoader.js';
 export { ObjectLoader } from './loaders/ObjectLoader.js';
@@ -87,20 +87,9 @@ export { InterleavedBufferAttribute } from './core/InterleavedBufferAttribute.js
 export { InstancedInterleavedBuffer } from './core/InstancedInterleavedBuffer.js';
 export { InterleavedBuffer } from './core/InterleavedBuffer.js';
 export { InstancedBufferAttribute } from './core/InstancedBufferAttribute.js';
-export {
-	Float64BufferAttribute,
-	Float32BufferAttribute,
-	Uint32BufferAttribute,
-	Int32BufferAttribute,
-	Uint16BufferAttribute,
-	Int16BufferAttribute,
-	Uint8ClampedBufferAttribute,
-	Uint8BufferAttribute,
-	Int8BufferAttribute,
-	BufferAttribute
-} from './core/BufferAttribute.js';
+export * from './core/BufferAttribute.js';
 export { Face3 } from './core/Face3.js';
-export { Object3DIdCount, Object3D } from './core/Object3D.js';
+export { Object3D } from './core/Object3D.js';
 export { Raycaster } from './core/Raycaster.js';
 export { Layers } from './core/Layers.js';
 export { EventDispatcher } from './core/EventDispatcher.js';
@@ -111,9 +100,9 @@ export { DiscreteInterpolant } from './math/interpolants/DiscreteInterpolant.js'
 export { CubicInterpolant } from './math/interpolants/CubicInterpolant.js';
 export { Interpolant } from './math/Interpolant.js';
 export { Triangle } from './math/Triangle.js';
-export { Spline } from './math/Spline.js';
 export { _Math as Math } from './math/Math.js';
 export { Spherical } from './math/Spherical.js';
+export { Cylindrical } from './math/Cylindrical.js';
 export { Plane } from './math/Plane.js';
 export { Frustum } from './math/Frustum.js';
 export { Sphere } from './math/Sphere.js';
@@ -138,16 +127,14 @@ export { PointLightHelper } from './extras/helpers/PointLightHelper.js';
 export { RectAreaLightHelper } from './extras/helpers/RectAreaLightHelper.js';
 export { HemisphereLightHelper } from './extras/helpers/HemisphereLightHelper.js';
 export { GridHelper } from './extras/helpers/GridHelper.js';
+export { PolarGridHelper } from './extras/helpers/PolarGridHelper.js';
 export { FaceNormalsHelper } from './extras/helpers/FaceNormalsHelper.js';
 export { DirectionalLightHelper } from './extras/helpers/DirectionalLightHelper.js';
 export { CameraHelper } from './extras/helpers/CameraHelper.js';
-export { BoundingBoxHelper } from './extras/helpers/BoundingBoxHelper.js';
 export { BoxHelper } from './extras/helpers/BoxHelper.js';
 export { ArrowHelper } from './extras/helpers/ArrowHelper.js';
 export { AxisHelper } from './extras/helpers/AxisHelper.js';
-export { ClosedSplineCurve3 } from './extras/curves/ClosedSplineCurve3.js';
 export { CatmullRomCurve3 } from './extras/curves/CatmullRomCurve3.js';
-export { SplineCurve3 } from './extras/curves/SplineCurve3.js';
 export { CubicBezierCurve3 } from './extras/curves/CubicBezierCurve3.js';
 export { QuadraticBezierCurve3 } from './extras/curves/QuadraticBezierCurve3.js';
 export { LineCurve3 } from './extras/curves/LineCurve3.js';
@@ -158,12 +145,12 @@ export { CubicBezierCurve } from './extras/curves/CubicBezierCurve.js';
 export { QuadraticBezierCurve } from './extras/curves/QuadraticBezierCurve.js';
 export { LineCurve } from './extras/curves/LineCurve.js';
 export { Shape } from './extras/core/Shape.js';
-export { ShapePath, Path } from './extras/core/Path.js';
+export { Path } from './extras/core/Path.js';
+export { ShapePath } from './extras/core/ShapePath.js';
 export { Font } from './extras/core/Font.js';
 export { CurvePath } from './extras/core/CurvePath.js';
 export { Curve } from './extras/core/Curve.js';
 export { ShapeUtils } from './extras/ShapeUtils.js';
 export { SceneUtils } from './extras/SceneUtils.js';
-export { CurveUtils } from './extras/CurveUtils.js';
 export * from './constants.js';
 export * from './Three.Legacy.js';

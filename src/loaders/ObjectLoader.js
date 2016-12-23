@@ -1,4 +1,24 @@
-import { TextureMapping, TextureWrapping, TextureFilter } from '../constants';
+import {
+	UVMapping,
+	CubeReflectionMapping,
+	CubeRefractionMapping,
+	EquirectangularReflectionMapping,
+	EquirectangularRefractionMapping,
+	SphericalReflectionMapping,
+	CubeUVReflectionMapping,
+	CubeUVRefractionMapping,
+
+	RepeatWrapping,
+	ClampToEdgeWrapping,
+	MirroredRepeatWrapping,
+
+	NearestFilter,
+	NearestMipMapNearestFilter,
+	NearestMipMapLinearFilter,
+	LinearFilter,
+	LinearMipMapNearestFilter,
+	LinearMipMapLinearFilter
+} from '../constants';
 import { Color } from '../math/Color';
 import { Matrix4 } from '../math/Matrix4';
 import { Object3D } from '../core/Object3D';
@@ -35,7 +55,7 @@ import * as Geometries from '../geometries/Geometries';
  * @author mrdoob / http://mrdoob.com/
  */
 
-function ObjectLoader ( manager ) {
+function ObjectLoader( manager ) {
 
 	this.manager = ( manager !== undefined ) ? manager : DefaultLoadingManager;
 	this.texturePath = '';
@@ -457,6 +477,32 @@ Object.assign( ObjectLoader.prototype, {
 
 	parseTextures: function ( json, images, videos ) {
 
+		var TextureMapping = {
+			UVMapping: UVMapping,
+			CubeReflectionMapping: CubeReflectionMapping,
+			CubeRefractionMapping: CubeRefractionMapping,
+			EquirectangularReflectionMapping: EquirectangularReflectionMapping,
+			EquirectangularRefractionMapping: EquirectangularRefractionMapping,
+			SphericalReflectionMapping: SphericalReflectionMapping,
+			CubeUVReflectionMapping: CubeUVReflectionMapping,
+			CubeUVRefractionMapping: CubeUVRefractionMapping
+		};
+
+		var TextureWrapping = {
+			RepeatWrapping: RepeatWrapping,
+			ClampToEdgeWrapping: ClampToEdgeWrapping,
+			MirroredRepeatWrapping: MirroredRepeatWrapping
+		};
+
+		var TextureFilter = {
+			NearestFilter: NearestFilter,
+			NearestMipMapNearestFilter: NearestMipMapNearestFilter,
+			NearestMipMapLinearFilter: NearestMipMapLinearFilter,
+			LinearFilter: LinearFilter,
+			LinearMipMapNearestFilter: LinearMipMapNearestFilter,
+			LinearMipMapLinearFilter: LinearMipMapLinearFilter
+		};
+
 		function parseConstant( value, type ) {
 
 			if ( typeof( value ) === 'number' ) return value;
@@ -695,6 +741,10 @@ Object.assign( ObjectLoader.prototype, {
 					object = new Group();
 
 					break;
+
+				case 'SkinnedMesh':
+
+					console.warn( 'THREE.ObjectLoader.parseObject() does not support SkinnedMesh type. Instantiates Object3D instead.' );
 
 				default:
 

@@ -3,7 +3,20 @@ var list = {
 	"Manual": {
 		"Introduction": [
 			[ "Creating a scene", "manual/introduction/Creating-a-scene" ],
-			[ "Matrix transformations", "manual/introduction/Matrix-transformations" ]
+			[ "Detecting WebGL and browser compatibility", "manual/introduction/Detecting-WebGL-and-browser-compatibility" ],
+			[ "Matrix transformations", "manual/introduction/Matrix-transformations" ],
+			[ "How to update things", "manual/introduction/How-to-update-things" ],
+			[ "Useful links", "manual/introduction/Useful-links" ],
+			[ "Drawing Lines", "manual/introduction/Drawing-lines" ],
+			[ "Creating Text", "manual/introduction/Creating-text" ],
+			[ "Code Style Guide", "manual/introduction/Code-style-guide" ],
+			[ "Migration Guide", "manual/introduction/Migration-guide" ],
+			[ "How to run things locally", "manual/introduction/How-to-run-thing-locally" ],
+			[ "FAQ", "manual/introduction/FAQ" ]
+		],
+
+		"Build Tools": [
+			[ "Testing with NPM", "manual/buildTools/Testing-with-NPM" ]
 		]
 	},
 
@@ -63,10 +76,15 @@ var list = {
 			[ "EventDispatcher", "api/core/EventDispatcher" ],
 			[ "Face3", "api/core/Face3" ],
 			[ "Geometry", "api/core/Geometry" ],
+			[ "InstancedBufferAttribute", "api/core/InstancedBufferAttribute" ],
+			[ "InstancedBufferGeometry", "api/core/InstancedBufferGeometry" ],
+			[ "InstancedInterleavedBuffer", "api/core/InstancedInterleavedBuffer" ],
+			[ "InterleavedBuffer", "api/core/InterleavedBuffer" ],
+			[ "InterleavedBufferAttribute", "api/core/InterleavedBufferAttribute" ],
 			[ "Layers", "api/core/Layers" ],
 			[ "Object3D", "api/core/Object3D" ],
 			[ "Raycaster", "api/core/Raycaster" ],
-			[ "Uniform", "api/core/Uniform"]
+			[ "Uniform", "api/core/Uniform" ]
 		],
 
 		"Core / BufferAttributes": [
@@ -95,7 +113,6 @@ var list = {
 		"Extras / Curves": [
 			[ "ArcCurve", "api/extras/curves/ArcCurve" ],
 			[ "CatmullRomCurve3", "api/extras/curves/CatmullRomCurve3" ],
-			[ "ClosedSplineCurve3", "api/extras/curves/ClosedSplineCurve3" ],
 			[ "CubicBezierCurve", "api/extras/curves/CubicBezierCurve" ],
 			[ "CubicBezierCurve3", "api/extras/curves/CubicBezierCurve3" ],
 			[ "EllipseCurve", "api/extras/curves/EllipseCurve" ],
@@ -103,21 +120,21 @@ var list = {
 			[ "LineCurve3", "api/extras/curves/LineCurve3" ],
 			[ "QuadraticBezierCurve", "api/extras/curves/QuadraticBezierCurve" ],
 			[ "QuadraticBezierCurve3", "api/extras/curves/QuadraticBezierCurve3" ],
-			[ "SplineCurve", "api/extras/curves/SplineCurve" ],
-			[ "SplineCurve3", "api/extras/curves/SplineCurve3" ]
+			[ "SplineCurve", "api/extras/curves/SplineCurve" ]
 		],
 
 		"Extras / Helpers": [
 			[ "ArrowHelper", "api/extras/helpers/ArrowHelper" ],
 			[ "AxisHelper", "api/extras/helpers/AxisHelper" ],
-			[ "BoundingBoxHelper", "api/extras/helpers/BoundingBoxHelper" ],
 			[ "BoxHelper", "api/extras/helpers/BoxHelper" ],
 			[ "CameraHelper", "api/extras/helpers/CameraHelper" ],
 			[ "DirectionalLightHelper", "api/extras/helpers/DirectionalLightHelper" ],
 			[ "FaceNormalsHelper", "api/extras/helpers/FaceNormalsHelper" ],
 			[ "GridHelper", "api/extras/helpers/GridHelper" ],
+			[ "PolarGridHelper", "api/extras/helpers/PolarGridHelper"],
 			[ "HemisphereLightHelper", "api/extras/helpers/HemisphereLightHelper" ],
 			[ "PointLightHelper", "api/extras/helpers/PointLightHelper" ],
+			[ "RectAreaLightHelper", "api/extras/helpers/RectAreaLightHelper" ],
 			[ "SkeletonHelper", "api/extras/helpers/SkeletonHelper" ],
 			[ "SpotLightHelper", "api/extras/helpers/SpotLightHelper" ],
 			[ "VertexNormalsHelper", "api/extras/helpers/VertexNormalsHelper" ]
@@ -177,19 +194,20 @@ var list = {
 			[ "HemisphereLight", "api/lights/HemisphereLight" ],
 			[ "Light", "api/lights/Light" ],
 			[ "PointLight", "api/lights/PointLight" ],
+			[ "RectAreaLight", "api/lights/RectAreaLight" ],
 			[ "SpotLight", "api/lights/SpotLight" ]
 		],
 
 		"Lights / Shadows": [
-			[ "DirectionalLightShadow", "api/lights/DirectionalLightShadow" ],
-			[ "LightShadow", "api/lights/LightShadow" ],
-			[ "SpotLightShadow", "api/lights/SpotLightShadow" ]
+			[ "DirectionalLightShadow", "api/lights/shadows/DirectionalLightShadow" ],
+			[ "LightShadow", "api/lights/shadows/LightShadow" ],
+			[ "RectAreaLightShadow", "api/lights/shadows/RectAreaLightShadow" ],
+			[ "SpotLightShadow", "api/lights/shadows/SpotLightShadow" ]
 		],
 
 		"Loaders": [
 			[ "AnimationLoader", "api/loaders/AnimationLoader" ],
 			[ "AudioLoader", "api/loaders/AudioLoader" ],
-			[ "BinaryTextureLoader", "api/loaders/BinaryTextureLoader" ],
 			[ "BufferGeometryLoader", "api/loaders/BufferGeometryLoader" ],
 			[ "Cache", "api/loaders/Cache" ],
 			[ "CompressedTextureLoader", "api/loaders/CompressedTextureLoader" ],
@@ -202,12 +220,12 @@ var list = {
 			[ "Loader", "api/loaders/Loader" ],
 			[ "MaterialLoader", "api/loaders/MaterialLoader" ],
 			[ "ObjectLoader", "api/loaders/ObjectLoader" ],
-			[ "TextureLoader", "api/loaders/TextureLoader" ],
+			[ "TextureLoader", "api/loaders/TextureLoader" ]
 		],
 
 		"Loaders / Managers": [
-			[ "DefaultLoadingManager", "api/loaders/DefaultLoadingManager" ],
-			[ "LoadingManager", "api/loaders/LoadingManager" ]
+			[ "DefaultLoadingManager", "api/loaders/managers/DefaultLoadingManager" ],
+			[ "LoadingManager", "api/loaders/managers/LoadingManager" ]
 		],
 
 		"Materials": [
@@ -221,6 +239,7 @@ var list = {
 			[ "MeshPhongMaterial", "api/materials/MeshPhongMaterial" ],
 			[ "MeshPhysicalMaterial", "api/materials/MeshPhysicalMaterial" ],
 			[ "MeshStandardMaterial", "api/materials/MeshStandardMaterial" ],
+			[ "MeshToonMaterial", "api/materials/MeshToonMaterial" ],
 			[ "MultiMaterial", "api/materials/MultiMaterial" ],
 			[ "PointsMaterial", "api/materials/PointsMaterial" ],
 			[ "RawShaderMaterial", "api/materials/RawShaderMaterial" ],
@@ -233,6 +252,7 @@ var list = {
 			[ "Box2", "api/math/Box2" ],
 			[ "Box3", "api/math/Box3" ],
 			[ "Color", "api/math/Color" ],
+			[ "Cylindrical", "api/math/Cylindrical" ],
 			[ "Euler", "api/math/Euler" ],
 			[ "Frustum", "api/math/Frustum" ],
 			[ "Interpolant", "api/math/Interpolant" ],
@@ -245,7 +265,6 @@ var list = {
 			[ "Ray", "api/math/Ray" ],
 			[ "Sphere", "api/math/Sphere" ],
 			[ "Spherical", "api/math/Spherical" ],
-			[ "Spline", "api/math/Spline" ],
 			[ "Triangle", "api/math/Triangle" ],
 			[ "Vector2", "api/math/Vector2" ],
 			[ "Vector3", "api/math/Vector3" ],
@@ -273,10 +292,6 @@ var list = {
 			[ "Sprite", "api/objects/Sprite" ]
 		],
 
-		"Polyfills": [
-			[ "Polyfills", "api/polyfills" ]
-		],
-
 		"Renderers": [
 			[ "WebGLRenderer", "api/renderers/WebGLRenderer" ],
 			[ "WebGLRenderTarget", "api/renderers/WebGLRenderTarget" ],
@@ -288,17 +303,6 @@ var list = {
 			[ "ShaderLib", "api/renderers/shaders/ShaderLib" ],
 			[ "UniformsLib", "api/renderers/shaders/UniformsLib" ],
 			[ "UniformsUtils", "api/renderers/shaders/UniformsUtils" ]
-		],
-
-		"Renderers / WebGL": [
-			[ "WebGLProgram", "api/renderers/webgl/WebGLProgram" ],
-			[ "WebGLShader", "api/renderers/webgl/WebGLShader" ],
-			[ "WebGLState", "api/renderers/webgl/WebGLState" ]
-		],
-
-		"Renderers / WebGL / Plugins": [
-			[ "LensFlarePlugin", "api/renderers/webgl/plugins/LensFlarePlugin" ],
-			[ "SpritePlugin", "api/renderers/webgl/plugins/SpritePlugin" ]
 		],
 
 		"Scenes": [
@@ -350,6 +354,24 @@ var list = {
 		]
 
 	},
+
+	"Developer Reference": {
+		"Polyfills": [
+			[ "Polyfills", "api/polyfills" ]
+		],
+
+		"WebGLRenderer": [
+			[ "WebGLProgram", "api/renderers/webgl/WebGLProgram" ],
+			[ "WebGLShader", "api/renderers/webgl/WebGLShader" ],
+			[ "WebGLState", "api/renderers/webgl/WebGLState" ]
+		],
+
+		"WebGLRenderer / Plugins": [
+			[ "LensFlarePlugin", "api/renderers/webgl/plugins/LensFlarePlugin" ],
+			[ "SpritePlugin", "api/renderers/webgl/plugins/SpritePlugin" ]
+		]
+
+	}
 
 };
 

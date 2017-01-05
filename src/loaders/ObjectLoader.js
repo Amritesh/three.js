@@ -399,7 +399,7 @@ Object.assign( ObjectLoader.prototype, {
 
 			scope.manager.itemStart( url );
 
-			return loader.load( url, function () {
+			return loader.load( name, url, function () {
 
 				scope.manager.itemEnd( url );
 

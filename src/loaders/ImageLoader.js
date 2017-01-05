@@ -14,7 +14,7 @@ function ImageLoader( manager ) {
 
 Object.assign( ImageLoader.prototype, {
 
-	load: function ( url, onLoad, onProgress, onError ) {
+	load: function ( name, url, onLoad, onProgress, onError ) {
 
 		if ( url === undefined ) url = '';
 
@@ -72,6 +72,7 @@ Object.assign( ImageLoader.prototype, {
 
 		scope.manager.itemStart( url );
 
+        image.name = name;
 		image.src = url;
 
 		return image;

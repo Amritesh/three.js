@@ -395,7 +395,7 @@ Object.assign( ObjectLoader.prototype, {
 		var scope = this;
 		var images = {};
 
-		function loadImage( url ) {
+		function loadImage( name, url ) {
 
 			scope.manager.itemStart( url );
 
@@ -421,9 +421,10 @@ Object.assign( ObjectLoader.prototype, {
 			for ( var i = 0, l = json.length; i < l; i ++ ) {
 
 				var image = json[ i ];
+                var name = image.name;
 				var path = /^(\/\/)|([a-z]+:(\/\/)?)/i.test( image.url ) ? image.url : scope.texturePath + image.url;
 
-				images[ image.uuid ] = loadImage( path );
+				images[ image.uuid ] = loadImage( name, path );
 
 			}
 
@@ -446,6 +447,8 @@ Object.assign( ObjectLoader.prototype, {
             video.height = 10;
             video.muted = true;
             video.setAttribute("loop","");
+            video.setAttribute("style","display:none");
+            video.setAttribute('crossorigin', 'anonymous');
             video.src = url;
             document.body.appendChild(video);
             return video;

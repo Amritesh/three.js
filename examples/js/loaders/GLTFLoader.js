@@ -50,16 +50,17 @@ THREE.GLTFLoader = ( function () {
 			var parser = new GLTFParser( json, {
 
 				path: path || this.path,
-				crossOrigin: !! this.crossOrigin
+				crossOrigin: this.crossOrigin
 
 			} );
 
-			parser.parse( function ( scene, cameras, animations ) {
+			parser.parse( function ( scene, scenes, cameras, animations ) {
 
 				console.timeEnd( 'GLTFLoader' );
 
 				var glTF = {
 					"scene": scene,
+					"scenes": scenes,
 					"cameras": cameras,
 					"animations": animations
 				};
@@ -632,6 +633,14 @@ THREE.GLTFLoader = ( function () {
 
 			var scene = dependencies.scenes[ json.scene ];
 
+			var scenes = [];
+
+			for ( var name in dependencies.scenes ) {
+
+				scenes.push( dependencies.scenes[ name ] );
+
+			}
+
 			var cameras = [];
 
 			for ( var name in dependencies.cameras ) {
@@ -649,7 +658,7 @@ THREE.GLTFLoader = ( function () {
 
 			}
 
-			callback( scene, cameras, animations );
+			callback( scene, scenes, cameras, animations );
 
 		} );
 
@@ -793,7 +802,7 @@ THREE.GLTFLoader = ( function () {
 
 					}
 
-					textureLoader.crossOrigin = options.crossOrigin || false;
+					textureLoader.setCrossOrigin( options.crossOrigin );
 
 					textureLoader.load( resolveURL( source.uri, options.path ), function ( _texture ) {
 

@@ -135,7 +135,8 @@ Audio.prototype = Object.assign( Object.create( Object3D.prototype ), {
 	},
 
 	seek: function (value, play) {
-        this.stop();
+        if(this.isPlaying === true)
+                this.stop();
         this.startTime = value;
         if(play){
             this.play();

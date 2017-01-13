@@ -4757,7 +4757,7 @@ function WebGLUniforms( gl, program, renderer ) {
 
 	var n = gl.getProgramParameter( program, gl.ACTIVE_UNIFORMS );
 
-	for ( var i = 0; i !== n; ++ i ) {
+	for ( var i = 0; i < n; ++ i ) {
 
 		var info = gl.getActiveUniform( program, i ),
 			path = info.name,
@@ -33875,7 +33875,23 @@ Object.assign( ObjectLoader.prototype, {
 
 				for ( var child in data.children ) {
 
-					object.add( this.parseObject( data.children[ child ], geometries, materials ) );
+					if( data.userData !== undefined && data.userData.type === "audio" )
+                    {
+                        var url = data.userData.url;
+                        var listener = new THREE.AudioListener();
+                        var sound = new THREE.PositionalAudio( listener );
+                        var audioLoader = new THREE.AudioLoader();
+                        audioLoader.load( url, function( buffer ) {
+                            sound.setBuffer( buffer );
+                            sound.setLoop(true);
+                            sound.setVolume(1);
+                        });
+                        object.add(sound);
+                    }
+                    else {
+                        object.add( this.parseObject( data.children[ child ], geometries, materials ) );    
+                    }
+                    
 
 				}
 
@@ -35990,8 +36006,12 @@ Audio.prototype = Object.assign( Object.create( Object3D.prototype ), {
 		}
 
 		var source = this.context.createBufferSource();
-
-		source.buffer = this.buffer;
+        
+        if(this.source !== undefined){
+            this.disconnect();
+        }
+		
+        source.buffer = this.buffer;
 		source.loop = this.loop;
 		source.onended = this.onEnded.bind( this );
 		source.playbackRate.setValueAtTime( this.playbackRate, this.startTime );

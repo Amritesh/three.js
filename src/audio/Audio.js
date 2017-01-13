@@ -79,8 +79,12 @@ Audio.prototype = Object.assign( Object.create( Object3D.prototype ), {
 		}
 
 		var source = this.context.createBufferSource();
-
-		source.buffer = this.buffer;
+        
+        if(this.source !== undefined){
+            this.disconnect();
+        }
+		
+        source.buffer = this.buffer;
 		source.loop = this.loop;
 		source.onended = this.onEnded.bind( this );
 		source.playbackRate.setValueAtTime( this.playbackRate, this.startTime );

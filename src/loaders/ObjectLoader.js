@@ -791,7 +791,23 @@ Object.assign( ObjectLoader.prototype, {
 
 				for ( var child in data.children ) {
 
-					object.add( this.parseObject( data.children[ child ], geometries, materials ) );
+					if( data.userData !== undefined && data.userData.type === "audio" )
+                    {
+                        var url = data.userData.url;
+                        var listener = new THREE.AudioListener();
+                        var sound = new THREE.PositionalAudio( listener );
+                        var audioLoader = new THREE.AudioLoader();
+                        audioLoader.load( url, function( buffer ) {
+                            sound.setBuffer( buffer );
+                            sound.setLoop(true);
+                            sound.setVolume(1);
+                        });
+                        object.add(sound);
+                    }
+                    else {
+                        object.add( this.parseObject( data.children[ child ], geometries, materials ) );    
+                    }
+                    
 
 				}
 

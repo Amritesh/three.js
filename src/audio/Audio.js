@@ -85,7 +85,8 @@ Audio.prototype = Object.assign( Object.create( Object3D.prototype ), {
 		source.onended = this.onEnded.bind( this );
 		source.playbackRate.setValueAtTime( this.playbackRate, this.startTime );
 		source.start( 0, this.startTime );
-
+        source.context.resume();
+        
 		this.isPlaying = true;
 
 		this.source = source;
@@ -120,7 +121,8 @@ Audio.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 		}
 
-		this.source.stop();
+		this.source.context.suspend();
+        this.source.stop();
 		this.startTime = 0;
 		this.isPlaying = false;
 
@@ -128,7 +130,16 @@ Audio.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 	},
 
-	connect: function () {
+	seek: function (value, play) {
+        this.stop();
+        this.startTime = value;
+        if(play){
+            this.play();
+        }
+
+    },
+
+    connect: function () {
 
 		if ( this.filters.length > 0 ) {
 

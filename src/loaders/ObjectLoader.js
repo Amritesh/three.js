@@ -85,7 +85,10 @@ Object.assign( ObjectLoader.prototype, {
 
 			} catch ( error ) {
 
+				if ( onError !== undefined ) onError( error );
+
 				console.error( 'THREE:ObjectLoader: Can\'t parse ' + url + '.', error.message );
+
 				return;
 
 			}
@@ -445,7 +448,6 @@ Object.assign( ObjectLoader.prototype, {
             video.id = "video";
             video.width = 10;
             video.height = 10;
-            video.muted = true;
             video.setAttribute("loop","");
             video.setAttribute("style","display:none");
             video.setAttribute('crossorigin', 'anonymous');

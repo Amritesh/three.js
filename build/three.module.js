@@ -90,7 +90,7 @@ if ( Object.assign === undefined ) {
 
 function EventDispatcher() {}
 
-EventDispatcher.prototype = {
+Object.assign( EventDispatcher.prototype, {
 
 	addEventListener: function ( type, listener ) {
 
@@ -173,9 +173,9 @@ EventDispatcher.prototype = {
 
 	}
 
-};
+} );
 
-var REVISION = '84dev';
+var REVISION = '85dev';
 var MOUSE = { LEFT: 0, MIDDLE: 1, RIGHT: 2 };
 var CullFaceNone = 0;
 var CullFaceBack = 1;
@@ -481,37 +481,45 @@ function Vector2( x, y ) {
 
 }
 
-Vector2.prototype = {
+Object.defineProperties( Vector2.prototype, {
 
-	constructor: Vector2,
+	"width" : {
+		
+		get: function () { 
+			
+			return this.x; 
+		
+		},
+		
+		set: function ( value ) { 
+			
+			this.x = value; 
+		
+		}
+		
+	},
+
+	"height" : {
+		
+		get: function () { 
+			
+			return this.y; 
+		
+		},
+		
+		set: function ( value ) { 
+			
+			this.y = value; 
+		
+		}
+		
+	}
+
+} );
+
+Object.assign( Vector2.prototype, {
 
 	isVector2: true,
-
-	get width() {
-
-		return this.x;
-
-	},
-
-	set width( value ) {
-
-		this.x = value;
-
-	},
-
-	get height() {
-
-		return this.y;
-
-	},
-
-	set height( value ) {
-
-		this.y = value;
-
-	},
-
-	//
 
 	set: function ( x, y ) {
 
@@ -738,16 +746,10 @@ Vector2.prototype = {
 
 	clampScalar: function () {
 
-		var min, max;
+		var min = new Vector2();
+		var max = new Vector2();
 
 		return function clampScalar( minVal, maxVal ) {
-
-			if ( min === undefined ) {
-
-				min = new Vector2();
-				max = new Vector2();
-
-			}
 
 			min.set( minVal, minVal );
 			max.set( maxVal, maxVal );
@@ -951,7 +953,7 @@ Vector2.prototype = {
 
 	}
 
-};
+} );
 
 /**
  * @author mrdoob / http://mrdoob.com/
@@ -1008,17 +1010,21 @@ function Texture( image, mapping, wrapS, wrapT, magFilter, minFilter, format, ty
 Texture.DEFAULT_IMAGE = undefined;
 Texture.DEFAULT_MAPPING = UVMapping;
 
-Texture.prototype = {
+Object.defineProperty( Texture.prototype, "needsUpdate", {
+
+	set: function(value) { 
+		
+		if ( value === true ) this.version ++; 
+	
+	}
+
+});
+
+Object.assign( Texture.prototype, EventDispatcher.prototype, {
 
 	constructor: Texture,
 
 	isTexture: true,
-
-	set needsUpdate( value ) {
-
-		if ( value === true ) this.version ++;
-
-	},
 
 	clone: function () {
 
@@ -1027,6 +1033,8 @@ Texture.prototype = {
 	},
 
 	copy: function ( source ) {
+
+		this.name = source.name;
 
 		this.image = source.image;
 		this.mipmaps = source.mipmaps.slice( 0 );
@@ -1225,9 +1233,7 @@ Texture.prototype = {
 
 	}
 
-};
-
-Object.assign( Texture.prototype, EventDispatcher.prototype );
+} );
 
 /**
  * @author supereggbert / http://www.paulbrunt.co.uk/
@@ -1246,9 +1252,7 @@ function Vector4( x, y, z, w ) {
 
 }
 
-Vector4.prototype = {
-
-	constructor: Vector4,
+Object.assign( Vector4.prototype, {
 
 	isVector4: true,
 
@@ -1681,16 +1685,10 @@ Vector4.prototype = {
 
 	clampScalar: function () {
 
-		var min, max;
+		var min = new Vector4();
+		var max = new Vector4();
 
 		return function clampScalar( minVal, maxVal ) {
-
-			if ( min === undefined ) {
-
-				min = new Vector4();
-				max = new Vector4();
-
-			}
 
 			min.set( minVal, minVal, minVal, minVal );
 			max.set( maxVal, maxVal, maxVal, maxVal );
@@ -1859,7 +1857,7 @@ Vector4.prototype = {
 
 	}
 
-};
+} );
 
 /**
  * @author szimek / https://github.com/szimek/
@@ -1896,9 +1894,7 @@ function WebGLRenderTarget( width, height, options ) {
 
 }
 
-WebGLRenderTarget.prototype = {
-
-	constructor: WebGLRenderTarget,
+Object.assign( WebGLRenderTarget.prototype, EventDispatcher.prototype, {
 
 	isWebGLRenderTarget: true,
 
@@ -1947,9 +1943,7 @@ WebGLRenderTarget.prototype = {
 
 	}
 
-};
-
-Object.assign( WebGLRenderTarget.prototype, EventDispatcher.prototype );
+} );
 
 /**
  * @author alteredq / http://alteredqualia.com
@@ -1985,61 +1979,152 @@ function Quaternion( x, y, z, w ) {
 
 }
 
-Quaternion.prototype = {
+Object.assign( Quaternion, {
 
-	constructor: Quaternion,
+	slerp: function( qa, qb, qm, t ) {
 
-	get x () {
-
-		return this._x;
+		return qm.copy( qa ).slerp( qb, t );
 
 	},
 
-	set x ( value ) {
+	slerpFlat: function(
+			dst, dstOffset, src0, srcOffset0, src1, srcOffset1, t ) {
 
-		this._x = value;
-		this.onChangeCallback();
+		// fuzz-free, array-based Quaternion SLERP operation
+
+		var x0 = src0[ srcOffset0 + 0 ],
+			y0 = src0[ srcOffset0 + 1 ],
+			z0 = src0[ srcOffset0 + 2 ],
+			w0 = src0[ srcOffset0 + 3 ],
+
+			x1 = src1[ srcOffset1 + 0 ],
+			y1 = src1[ srcOffset1 + 1 ],
+			z1 = src1[ srcOffset1 + 2 ],
+			w1 = src1[ srcOffset1 + 3 ];
+
+		if ( w0 !== w1 || x0 !== x1 || y0 !== y1 || z0 !== z1 ) {
+
+			var s = 1 - t,
+
+				cos = x0 * x1 + y0 * y1 + z0 * z1 + w0 * w1,
+
+				dir = ( cos >= 0 ? 1 : - 1 ),
+				sqrSin = 1 - cos * cos;
+
+			// Skip the Slerp for tiny steps to avoid numeric problems:
+			if ( sqrSin > Number.EPSILON ) {
+
+				var sin = Math.sqrt( sqrSin ),
+					len = Math.atan2( sin, cos * dir );
+
+				s = Math.sin( s * len ) / sin;
+				t = Math.sin( t * len ) / sin;
+
+			}
+
+			var tDir = t * dir;
+
+			x0 = x0 * s + x1 * tDir;
+			y0 = y0 * s + y1 * tDir;
+			z0 = z0 * s + z1 * tDir;
+			w0 = w0 * s + w1 * tDir;
+
+			// Normalize in case we just did a lerp:
+			if ( s === 1 - t ) {
+
+				var f = 1 / Math.sqrt( x0 * x0 + y0 * y0 + z0 * z0 + w0 * w0 );
+
+				x0 *= f;
+				y0 *= f;
+				z0 *= f;
+				w0 *= f;
+
+			}
+
+		}
+
+		dst[ dstOffset ] = x0;
+		dst[ dstOffset + 1 ] = y0;
+		dst[ dstOffset + 2 ] = z0;
+		dst[ dstOffset + 3 ] = w0;
+
+	}
+
+} );
+
+Object.defineProperties( Quaternion.prototype, {
+
+	"x" : {
+
+		get: function () {
+
+			return this._x;
+
+		},
+
+		set: function ( value ) {
+
+			this._x = value;
+			this.onChangeCallback();
+
+		}
 
 	},
 
-	get y () {
+	"y" : {
 
-		return this._y;
+		get: function () {
 
-	},
+			return this._y;
 
-	set y ( value ) {
+		},
 
-		this._y = value;
-		this.onChangeCallback();
+		set: function ( value ) {
 
-	},
+			this._y = value;
+			this.onChangeCallback();
 
-	get z () {
-
-		return this._z;
+		}
 
 	},
 
-	set z ( value ) {
+	"z" : {
 
-		this._z = value;
-		this.onChangeCallback();
+		get: function () {
 
-	},
+			return this._z;
 
-	get w () {
+		},
 
-		return this._w;
+		set: function ( value ) {
 
-	},
+			this._z = value;
+			this.onChangeCallback();
 
-	set w ( value ) {
-
-		this._w = value;
-		this.onChangeCallback();
+		}
 
 	},
+
+	"w" : {
+
+		get: function () {
+
+			return this._w;
+
+		},
+
+		set: function ( value ) {
+
+			this._w = value;
+			this.onChangeCallback();
+
+		}
+
+	}
+
+});
+
+Object.assign( Quaternion.prototype, {
 
 	set: function ( x, y, z, w ) {
 
@@ -2228,7 +2313,8 @@ Quaternion.prototype = {
 
 		// assumes direction vectors vFrom and vTo are normalized
 
-		var v1, r;
+		var v1 = new Vector3();
+		var r;
 
 		var EPS = 0.000001;
 
@@ -2422,7 +2508,7 @@ Quaternion.prototype = {
 
 		var halfTheta = Math.atan2( sinHalfTheta, cosHalfTheta );
 		var ratioA = Math.sin( ( 1 - t ) * halfTheta ) / sinHalfTheta,
-		ratioB = Math.sin( t * halfTheta ) / sinHalfTheta;
+			ratioB = Math.sin( t * halfTheta ) / sinHalfTheta;
 
 		this._w = ( w * ratioA + this._w * ratioB );
 		this._x = ( x * ratioA + this._x * ratioB );
@@ -2480,79 +2566,6 @@ Quaternion.prototype = {
 
 	onChangeCallback: function () {}
 
-};
-
-Object.assign( Quaternion, {
-
-	slerp: function( qa, qb, qm, t ) {
-
-		return qm.copy( qa ).slerp( qb, t );
-
-	},
-
-	slerpFlat: function(
-			dst, dstOffset, src0, srcOffset0, src1, srcOffset1, t ) {
-
-		// fuzz-free, array-based Quaternion SLERP operation
-
-		var x0 = src0[ srcOffset0 + 0 ],
-			y0 = src0[ srcOffset0 + 1 ],
-			z0 = src0[ srcOffset0 + 2 ],
-			w0 = src0[ srcOffset0 + 3 ],
-
-			x1 = src1[ srcOffset1 + 0 ],
-			y1 = src1[ srcOffset1 + 1 ],
-			z1 = src1[ srcOffset1 + 2 ],
-			w1 = src1[ srcOffset1 + 3 ];
-
-		if ( w0 !== w1 || x0 !== x1 || y0 !== y1 || z0 !== z1 ) {
-
-			var s = 1 - t,
-
-				cos = x0 * x1 + y0 * y1 + z0 * z1 + w0 * w1,
-
-				dir = ( cos >= 0 ? 1 : - 1 ),
-				sqrSin = 1 - cos * cos;
-
-			// Skip the Slerp for tiny steps to avoid numeric problems:
-			if ( sqrSin > Number.EPSILON ) {
-
-				var sin = Math.sqrt( sqrSin ),
-					len = Math.atan2( sin, cos * dir );
-
-				s = Math.sin( s * len ) / sin;
-				t = Math.sin( t * len ) / sin;
-
-			}
-
-			var tDir = t * dir;
-
-			x0 = x0 * s + x1 * tDir;
-			y0 = y0 * s + y1 * tDir;
-			z0 = z0 * s + z1 * tDir;
-			w0 = w0 * s + w1 * tDir;
-
-			// Normalize in case we just did a lerp:
-			if ( s === 1 - t ) {
-
-				var f = 1 / Math.sqrt( x0 * x0 + y0 * y0 + z0 * z0 + w0 * w0 );
-
-				x0 *= f;
-				y0 *= f;
-				z0 *= f;
-				w0 *= f;
-
-			}
-
-		}
-
-		dst[ dstOffset ] = x0;
-		dst[ dstOffset + 1 ] = y0;
-		dst[ dstOffset + 2 ] = z0;
-		dst[ dstOffset + 3 ] = w0;
-
-	}
-
 } );
 
 /**
@@ -2572,9 +2585,7 @@ function Vector3( x, y, z ) {
 
 }
 
-Vector3.prototype = {
-
-	constructor: Vector3,
+Object.assign( Vector3.prototype, {
 
 	isVector3: true,
 
@@ -2799,7 +2810,7 @@ Vector3.prototype = {
 
 	applyEuler: function () {
 
-		var quaternion;
+		var quaternion = new Quaternion();
 
 		return function applyEuler( euler ) {
 
@@ -2809,8 +2820,6 @@ Vector3.prototype = {
 
 			}
 
-			if ( quaternion === undefined ) quaternion = new Quaternion();
-
 			return this.applyQuaternion( quaternion.setFromEuler( euler ) );
 
 		};
@@ -2819,11 +2828,9 @@ Vector3.prototype = {
 
 	applyAxisAngle: function () {
 
-		var quaternion;
+		var quaternion = new Quaternion();
 
 		return function applyAxisAngle( axis, angle ) {
-
-			if ( quaternion === undefined ) quaternion = new Quaternion();
 
 			return this.applyQuaternion( quaternion.setFromAxisAngle( axis, angle ) );
 
@@ -2882,11 +2889,9 @@ Vector3.prototype = {
 
 	project: function () {
 
-		var matrix;
+		var matrix = new Matrix4();
 
 		return function project( camera ) {
-
-			if ( matrix === undefined ) matrix = new Matrix4();
 
 			matrix.multiplyMatrices( camera.projectionMatrix, matrix.getInverse( camera.matrixWorld ) );
 			return this.applyMatrix4( matrix );
@@ -2897,11 +2902,9 @@ Vector3.prototype = {
 
 	unproject: function () {
 
-		var matrix;
+		var matrix = new Matrix4();
 
 		return function unproject( camera ) {
-
-			if ( matrix === undefined ) matrix = new Matrix4();
 
 			matrix.multiplyMatrices( camera.matrixWorld, matrix.getInverse( camera.projectionMatrix ) );
 			return this.applyMatrix4( matrix );
@@ -2976,16 +2979,10 @@ Vector3.prototype = {
 
 	clampScalar: function () {
 
-		var min, max;
+		var min = new Vector3();
+		var max = new Vector3();
 
 		return function clampScalar( minVal, maxVal ) {
-
-			if ( min === undefined ) {
-
-				min = new Vector3();
-				max = new Vector3();
-
-			}
 
 			min.set( minVal, minVal, minVal );
 			max.set( maxVal, maxVal, maxVal );
@@ -3148,11 +3145,9 @@ Vector3.prototype = {
 
 	projectOnPlane: function () {
 
-		var v1;
+		var v1 = new Vector3();
 
 		return function projectOnPlane( planeNormal ) {
-
-			if ( v1 === undefined ) v1 = new Vector3();
 
 			v1.copy( this ).projectOnVector( planeNormal );
 
@@ -3167,11 +3162,9 @@ Vector3.prototype = {
 		// reflect incident vector off plane orthogonal to normal
 		// normal is assumed to have unit length
 
-		var v1;
+		var v1 = new Vector3();
 
 		return function reflect( normal ) {
-
-			if ( v1 === undefined ) v1 = new Vector3();
 
 			return this.sub( v1.copy( normal ).multiplyScalar( 2 * this.dot( normal ) ) );
 
@@ -3313,7 +3306,7 @@ Vector3.prototype = {
 
 	}
 
-};
+} );
 
 /**
  * @author mrdoob / http://mrdoob.com/
@@ -3347,9 +3340,7 @@ function Matrix4() {
 
 }
 
-Matrix4.prototype = {
-
-	constructor: Matrix4,
+Object.assign( Matrix4.prototype, {
 
 	isMatrix4: true,
 
@@ -3433,11 +3424,9 @@ Matrix4.prototype = {
 
 	extractRotation: function () {
 
-		var v1;
+		var v1 = new Vector3();
 
 		return function extractRotation( m ) {
-
-			if ( v1 === undefined ) v1 = new Vector3();
 
 			var te = this.elements;
 			var me = m.elements;
@@ -3631,17 +3620,11 @@ Matrix4.prototype = {
 
 	lookAt: function () {
 
-		var x, y, z;
+		var x = new Vector3();
+		var y = new Vector3();
+		var z = new Vector3();
 
 		return function lookAt( eye, target, up ) {
-
-			if ( x === undefined ) {
-
-				x = new Vector3();
-				y = new Vector3();
-				z = new Vector3();
-
-			}
 
 			var te = this.elements;
 
@@ -3764,11 +3747,9 @@ Matrix4.prototype = {
 
 	applyToBufferAttribute: function () {
 
-		var v1;
+		var v1 = new Vector3();
 
 		return function applyToBufferAttribute( attribute ) {
-
-			if ( v1 === undefined ) v1 = new Vector3();
 
 			for ( var i = 0, l = attribute.count; i < l; i ++ ) {
 
@@ -4086,16 +4067,10 @@ Matrix4.prototype = {
 
 	decompose: function () {
 
-		var vector, matrix;
+		var vector = new Vector3();
+		var matrix = new Matrix4();
 
 		return function decompose( position, quaternion, scale ) {
-
-			if ( vector === undefined ) {
-
-				vector = new Vector3();
-				matrix = new Matrix4();
-
-			}
 
 			var te = this.elements;
 
@@ -4253,7 +4228,7 @@ Matrix4.prototype = {
 
 	}
 
-};
+} );
 
 /**
  * @author mrdoob / http://mrdoob.com/
@@ -5226,6 +5201,31 @@ var ShaderChunk = {
  * @author mrdoob / http://mrdoob.com/
  */
 
+var ColorKeywords = { 'aliceblue': 0xF0F8FF, 'antiquewhite': 0xFAEBD7, 'aqua': 0x00FFFF, 'aquamarine': 0x7FFFD4, 'azure': 0xF0FFFF,
+	'beige': 0xF5F5DC, 'bisque': 0xFFE4C4, 'black': 0x000000, 'blanchedalmond': 0xFFEBCD, 'blue': 0x0000FF, 'blueviolet': 0x8A2BE2,
+	'brown': 0xA52A2A, 'burlywood': 0xDEB887, 'cadetblue': 0x5F9EA0, 'chartreuse': 0x7FFF00, 'chocolate': 0xD2691E, 'coral': 0xFF7F50,
+	'cornflowerblue': 0x6495ED, 'cornsilk': 0xFFF8DC, 'crimson': 0xDC143C, 'cyan': 0x00FFFF, 'darkblue': 0x00008B, 'darkcyan': 0x008B8B,
+	'darkgoldenrod': 0xB8860B, 'darkgray': 0xA9A9A9, 'darkgreen': 0x006400, 'darkgrey': 0xA9A9A9, 'darkkhaki': 0xBDB76B, 'darkmagenta': 0x8B008B,
+	'darkolivegreen': 0x556B2F, 'darkorange': 0xFF8C00, 'darkorchid': 0x9932CC, 'darkred': 0x8B0000, 'darksalmon': 0xE9967A, 'darkseagreen': 0x8FBC8F,
+	'darkslateblue': 0x483D8B, 'darkslategray': 0x2F4F4F, 'darkslategrey': 0x2F4F4F, 'darkturquoise': 0x00CED1, 'darkviolet': 0x9400D3,
+	'deeppink': 0xFF1493, 'deepskyblue': 0x00BFFF, 'dimgray': 0x696969, 'dimgrey': 0x696969, 'dodgerblue': 0x1E90FF, 'firebrick': 0xB22222,
+	'floralwhite': 0xFFFAF0, 'forestgreen': 0x228B22, 'fuchsia': 0xFF00FF, 'gainsboro': 0xDCDCDC, 'ghostwhite': 0xF8F8FF, 'gold': 0xFFD700,
+	'goldenrod': 0xDAA520, 'gray': 0x808080, 'green': 0x008000, 'greenyellow': 0xADFF2F, 'grey': 0x808080, 'honeydew': 0xF0FFF0, 'hotpink': 0xFF69B4,
+	'indianred': 0xCD5C5C, 'indigo': 0x4B0082, 'ivory': 0xFFFFF0, 'khaki': 0xF0E68C, 'lavender': 0xE6E6FA, 'lavenderblush': 0xFFF0F5, 'lawngreen': 0x7CFC00,
+	'lemonchiffon': 0xFFFACD, 'lightblue': 0xADD8E6, 'lightcoral': 0xF08080, 'lightcyan': 0xE0FFFF, 'lightgoldenrodyellow': 0xFAFAD2, 'lightgray': 0xD3D3D3,
+	'lightgreen': 0x90EE90, 'lightgrey': 0xD3D3D3, 'lightpink': 0xFFB6C1, 'lightsalmon': 0xFFA07A, 'lightseagreen': 0x20B2AA, 'lightskyblue': 0x87CEFA,
+	'lightslategray': 0x778899, 'lightslategrey': 0x778899, 'lightsteelblue': 0xB0C4DE, 'lightyellow': 0xFFFFE0, 'lime': 0x00FF00, 'limegreen': 0x32CD32,
+	'linen': 0xFAF0E6, 'magenta': 0xFF00FF, 'maroon': 0x800000, 'mediumaquamarine': 0x66CDAA, 'mediumblue': 0x0000CD, 'mediumorchid': 0xBA55D3,
+	'mediumpurple': 0x9370DB, 'mediumseagreen': 0x3CB371, 'mediumslateblue': 0x7B68EE, 'mediumspringgreen': 0x00FA9A, 'mediumturquoise': 0x48D1CC,
+	'mediumvioletred': 0xC71585, 'midnightblue': 0x191970, 'mintcream': 0xF5FFFA, 'mistyrose': 0xFFE4E1, 'moccasin': 0xFFE4B5, 'navajowhite': 0xFFDEAD,
+	'navy': 0x000080, 'oldlace': 0xFDF5E6, 'olive': 0x808000, 'olivedrab': 0x6B8E23, 'orange': 0xFFA500, 'orangered': 0xFF4500, 'orchid': 0xDA70D6,
+	'palegoldenrod': 0xEEE8AA, 'palegreen': 0x98FB98, 'paleturquoise': 0xAFEEEE, 'palevioletred': 0xDB7093, 'papayawhip': 0xFFEFD5, 'peachpuff': 0xFFDAB9,
+	'peru': 0xCD853F, 'pink': 0xFFC0CB, 'plum': 0xDDA0DD, 'powderblue': 0xB0E0E6, 'purple': 0x800080, 'red': 0xFF0000, 'rosybrown': 0xBC8F8F,
+	'royalblue': 0x4169E1, 'saddlebrown': 0x8B4513, 'salmon': 0xFA8072, 'sandybrown': 0xF4A460, 'seagreen': 0x2E8B57, 'seashell': 0xFFF5EE,
+	'sienna': 0xA0522D, 'silver': 0xC0C0C0, 'skyblue': 0x87CEEB, 'slateblue': 0x6A5ACD, 'slategray': 0x708090, 'slategrey': 0x708090, 'snow': 0xFFFAFA,
+	'springgreen': 0x00FF7F, 'steelblue': 0x4682B4, 'tan': 0xD2B48C, 'teal': 0x008080, 'thistle': 0xD8BFD8, 'tomato': 0xFF6347, 'turquoise': 0x40E0D0,
+	'violet': 0xEE82EE, 'wheat': 0xF5DEB3, 'white': 0xFFFFFF, 'whitesmoke': 0xF5F5F5, 'yellow': 0xFFFF00, 'yellowgreen': 0x9ACD32 };
+
 function Color( r, g, b ) {
 
 	if ( g === undefined && b === undefined ) {
@@ -5239,9 +5239,7 @@ function Color( r, g, b ) {
 
 }
 
-Color.prototype = {
-
-	constructor: Color,
+Object.assign( Color.prototype, {
 
 	isColor: true,
 
@@ -5716,32 +5714,7 @@ Color.prototype = {
 
 	}
 
-};
-
-var ColorKeywords = { 'aliceblue': 0xF0F8FF, 'antiquewhite': 0xFAEBD7, 'aqua': 0x00FFFF, 'aquamarine': 0x7FFFD4, 'azure': 0xF0FFFF,
-'beige': 0xF5F5DC, 'bisque': 0xFFE4C4, 'black': 0x000000, 'blanchedalmond': 0xFFEBCD, 'blue': 0x0000FF, 'blueviolet': 0x8A2BE2,
-'brown': 0xA52A2A, 'burlywood': 0xDEB887, 'cadetblue': 0x5F9EA0, 'chartreuse': 0x7FFF00, 'chocolate': 0xD2691E, 'coral': 0xFF7F50,
-'cornflowerblue': 0x6495ED, 'cornsilk': 0xFFF8DC, 'crimson': 0xDC143C, 'cyan': 0x00FFFF, 'darkblue': 0x00008B, 'darkcyan': 0x008B8B,
-'darkgoldenrod': 0xB8860B, 'darkgray': 0xA9A9A9, 'darkgreen': 0x006400, 'darkgrey': 0xA9A9A9, 'darkkhaki': 0xBDB76B, 'darkmagenta': 0x8B008B,
-'darkolivegreen': 0x556B2F, 'darkorange': 0xFF8C00, 'darkorchid': 0x9932CC, 'darkred': 0x8B0000, 'darksalmon': 0xE9967A, 'darkseagreen': 0x8FBC8F,
-'darkslateblue': 0x483D8B, 'darkslategray': 0x2F4F4F, 'darkslategrey': 0x2F4F4F, 'darkturquoise': 0x00CED1, 'darkviolet': 0x9400D3,
-'deeppink': 0xFF1493, 'deepskyblue': 0x00BFFF, 'dimgray': 0x696969, 'dimgrey': 0x696969, 'dodgerblue': 0x1E90FF, 'firebrick': 0xB22222,
-'floralwhite': 0xFFFAF0, 'forestgreen': 0x228B22, 'fuchsia': 0xFF00FF, 'gainsboro': 0xDCDCDC, 'ghostwhite': 0xF8F8FF, 'gold': 0xFFD700,
-'goldenrod': 0xDAA520, 'gray': 0x808080, 'green': 0x008000, 'greenyellow': 0xADFF2F, 'grey': 0x808080, 'honeydew': 0xF0FFF0, 'hotpink': 0xFF69B4,
-'indianred': 0xCD5C5C, 'indigo': 0x4B0082, 'ivory': 0xFFFFF0, 'khaki': 0xF0E68C, 'lavender': 0xE6E6FA, 'lavenderblush': 0xFFF0F5, 'lawngreen': 0x7CFC00,
-'lemonchiffon': 0xFFFACD, 'lightblue': 0xADD8E6, 'lightcoral': 0xF08080, 'lightcyan': 0xE0FFFF, 'lightgoldenrodyellow': 0xFAFAD2, 'lightgray': 0xD3D3D3,
-'lightgreen': 0x90EE90, 'lightgrey': 0xD3D3D3, 'lightpink': 0xFFB6C1, 'lightsalmon': 0xFFA07A, 'lightseagreen': 0x20B2AA, 'lightskyblue': 0x87CEFA,
-'lightslategray': 0x778899, 'lightslategrey': 0x778899, 'lightsteelblue': 0xB0C4DE, 'lightyellow': 0xFFFFE0, 'lime': 0x00FF00, 'limegreen': 0x32CD32,
-'linen': 0xFAF0E6, 'magenta': 0xFF00FF, 'maroon': 0x800000, 'mediumaquamarine': 0x66CDAA, 'mediumblue': 0x0000CD, 'mediumorchid': 0xBA55D3,
-'mediumpurple': 0x9370DB, 'mediumseagreen': 0x3CB371, 'mediumslateblue': 0x7B68EE, 'mediumspringgreen': 0x00FA9A, 'mediumturquoise': 0x48D1CC,
-'mediumvioletred': 0xC71585, 'midnightblue': 0x191970, 'mintcream': 0xF5FFFA, 'mistyrose': 0xFFE4E1, 'moccasin': 0xFFE4B5, 'navajowhite': 0xFFDEAD,
-'navy': 0x000080, 'oldlace': 0xFDF5E6, 'olive': 0x808000, 'olivedrab': 0x6B8E23, 'orange': 0xFFA500, 'orangered': 0xFF4500, 'orchid': 0xDA70D6,
-'palegoldenrod': 0xEEE8AA, 'palegreen': 0x98FB98, 'paleturquoise': 0xAFEEEE, 'palevioletred': 0xDB7093, 'papayawhip': 0xFFEFD5, 'peachpuff': 0xFFDAB9,
-'peru': 0xCD853F, 'pink': 0xFFC0CB, 'plum': 0xDDA0DD, 'powderblue': 0xB0E0E6, 'purple': 0x800080, 'red': 0xFF0000, 'rosybrown': 0xBC8F8F,
-'royalblue': 0x4169E1, 'saddlebrown': 0x8B4513, 'salmon': 0xFA8072, 'sandybrown': 0xF4A460, 'seagreen': 0x2E8B57, 'seashell': 0xFFF5EE,
-'sienna': 0xA0522D, 'silver': 0xC0C0C0, 'skyblue': 0x87CEEB, 'slateblue': 0x6A5ACD, 'slategray': 0x708090, 'slategrey': 0x708090, 'snow': 0xFFFAFA,
-'springgreen': 0x00FF7F, 'steelblue': 0x4682B4, 'tan': 0xD2B48C, 'teal': 0x008080, 'thistle': 0xD8BFD8, 'tomato': 0xFF6347, 'turquoise': 0x40E0D0,
-'violet': 0xEE82EE, 'wheat': 0xF5DEB3, 'white': 0xFFFFFF, 'whitesmoke': 0xF5F5F5, 'yellow': 0xFFFF00, 'yellowgreen': 0x9ACD32 };
+} );
 
 /**
  * @author alteredq / http://alteredqualia.com/
@@ -6162,9 +6135,7 @@ function Box2( min, max ) {
 
 }
 
-Box2.prototype = {
-
-	constructor: Box2,
+Object.assign( Box2.prototype, {
 
 	set: function ( min, max ) {
 
@@ -6367,7 +6338,7 @@ Box2.prototype = {
 
 	}
 
-};
+} );
 
 /**
  * @author mikael emtinger / http://gomo.se/
@@ -7187,24 +7158,26 @@ function Material() {
 
 }
 
-Material.prototype = {
+Object.defineProperty( Material.prototype, "needsUpdate", {
 
-	constructor: Material,
-
-	isMaterial: true,
-
-	get needsUpdate() {
+	get: function() {
 
 		return this._needsUpdate;
 
 	},
-
-	set needsUpdate( value ) {
+	
+	set: function(value) {
 
 		if ( value === true ) this.update();
 		this._needsUpdate = value;
 
-	},
+	}
+
+});
+
+Object.assign( Material.prototype, EventDispatcher.prototype, {
+
+	isMaterial: true,
 
 	setValues: function ( values ) {
 
@@ -7473,9 +7446,7 @@ Material.prototype = {
 
 	}
 
-};
-
-Object.assign( Material.prototype, EventDispatcher.prototype );
+} );
 
 /**
  * @author alteredq / http://alteredqualia.com/
@@ -7692,9 +7663,7 @@ function Box3( min, max ) {
 
 }
 
-Box3.prototype = {
-
-	constructor: Box3,
+Object.assign( Box3.prototype, {
 
 	isBox3: true,
 
@@ -7989,11 +7958,9 @@ Box3.prototype = {
 
 	intersectsSphere: ( function () {
 
-		var closestPoint;
+		var closestPoint = new Vector3();
 
 		return function intersectsSphere( sphere ) {
-
-			if ( closestPoint === undefined ) closestPoint = new Vector3();
 
 			// Find the point on the AABB closest to the sphere center.
 			this.clampPoint( sphere.center, closestPoint );
@@ -8162,7 +8129,7 @@ Box3.prototype = {
 
 	}
 
-};
+} );
 
 /**
  * @author bhouston / http://clara.io
@@ -8176,9 +8143,7 @@ function Sphere( center, radius ) {
 
 }
 
-Sphere.prototype = {
-
-	constructor: Sphere,
+Object.assign( Sphere.prototype, {
 
 	set: function ( center, radius ) {
 
@@ -8191,11 +8156,9 @@ Sphere.prototype = {
 
 	setFromPoints: function () {
 
-		var box;
+		var box = new Box3();
 
 		return function setFromPoints( points, optionalCenter ) {
-
-			if ( box === undefined ) box = new Box3(); // see #10547
 
 			var center = this.center;
 
@@ -8339,7 +8302,7 @@ Sphere.prototype = {
 
 	}
 
-};
+} );
 
 /**
  * @author alteredq / http://alteredqualia.com/
@@ -8366,9 +8329,7 @@ function Matrix3() {
 
 }
 
-Matrix3.prototype = {
-
-	constructor: Matrix3,
+Object.assign( Matrix3.prototype, {
 
 	isMatrix3: true,
 
@@ -8438,11 +8399,9 @@ Matrix3.prototype = {
 
 	applyToBufferAttribute: function () {
 
-		var v1;
+		var v1 = new Vector3();
 
 		return function applyToBufferAttribute( attribute ) {
-
-			if ( v1 === undefined ) v1 = new Vector3();
 
 			for ( var i = 0, l = attribute.count; i < l; i ++ ) {
 
@@ -8615,7 +8574,7 @@ Matrix3.prototype = {
 
 	}
 
-};
+} );
 
 /**
  * @author bhouston / http://clara.io
@@ -8628,9 +8587,7 @@ function Plane( normal, constant ) {
 
 }
 
-Plane.prototype = {
-
-	constructor: Plane,
+Object.assign( Plane.prototype, {
 
 	set: function ( normal, constant ) {
 
@@ -8848,7 +8805,7 @@ Plane.prototype = {
 
 	}
 
-};
+} );
 
 /**
  * @author mrdoob / http://mrdoob.com/
@@ -8871,9 +8828,7 @@ function Frustum( p0, p1, p2, p3, p4, p5 ) {
 
 }
 
-Frustum.prototype = {
-
-	constructor: Frustum,
+Object.assign( Frustum.prototype, {
 
 	set: function ( p0, p1, p2, p3, p4, p5 ) {
 
@@ -9026,8 +8981,7 @@ Frustum.prototype = {
 		};
 
 	}(),
-
-
+	
 	containsPoint: function ( point ) {
 
 		var planes = this.planes;
@@ -9046,7 +9000,7 @@ Frustum.prototype = {
 
 	}
 
-};
+} );
 
 /**
  * @author alteredq / http://alteredqualia.com/
@@ -9228,6 +9182,7 @@ function WebGLShadowMap( _renderer, _lights, _objects, capabilities ) {
 				var pars = { minFilter: NearestFilter, magFilter: NearestFilter, format: RGBAFormat };
 
 				shadow.map = new WebGLRenderTarget( _shadowMapSize.x, _shadowMapSize.y, pars );
+				shadow.map.texture.name = light.name + ".shadowMap";
 
 				shadowCamera.updateProjectionMatrix();
 
@@ -9240,7 +9195,7 @@ function WebGLShadowMap( _renderer, _lights, _objects, capabilities ) {
 			}
 
 			// TODO (abelnation / sam-g-steel): is this needed?
-			if (shadow && shadow.isRectAreaLightShadow ) {
+			if ( shadow && shadow.isRectAreaLightShadow ) {
 
 				shadow.update( light );
 
@@ -9345,8 +9300,8 @@ function WebGLShadowMap( _renderer, _lights, _objects, capabilities ) {
 		}
 
 		// Restore GL state.
-		var clearColor = _renderer.getClearColor(),
-		clearAlpha = _renderer.getClearAlpha();
+		var clearColor = _renderer.getClearColor();
+		var clearAlpha = _renderer.getClearAlpha();
 		_renderer.setClearColor( clearColor, clearAlpha );
 
 		scope.needsUpdate = false;
@@ -9515,9 +9470,7 @@ function Ray( origin, direction ) {
 
 }
 
-Ray.prototype = {
-
-	constructor: Ray,
+Object.assign( Ray.prototype, {
 
 	set: function ( origin, direction ) {
 
@@ -9829,8 +9782,6 @@ Ray.prototype = {
 
 	},
 
-
-
 	intersectsPlane: function ( plane ) {
 
 		// check if the ray lies on the plane first
@@ -10038,7 +9989,7 @@ Ray.prototype = {
 
 	}
 
-};
+} );
 
 /**
  * @author mrdoob / http://mrdoob.com/
@@ -10059,63 +10010,81 @@ Euler.RotationOrders = [ 'XYZ', 'YZX', 'ZXY', 'XZY', 'YXZ', 'ZYX' ];
 
 Euler.DefaultOrder = 'XYZ';
 
-Euler.prototype = {
+Object.defineProperties( Euler.prototype, {
 
-	constructor: Euler,
+	"x" : {
+
+		get: function () {
+
+			return this._x;
+
+		},
+
+		set: function ( value ) {
+
+			this._x = value;
+			this.onChangeCallback();
+
+		}
+
+	},
+
+	"y" : {
+
+		get: function () {
+
+			return this._y;
+
+		},
+
+		set: function ( value ) {
+
+			this._y = value;
+			this.onChangeCallback();
+
+		}
+
+	},
+
+	"z" : {
+
+		get: function () {
+
+			return this._z;
+
+		},
+
+		set: function ( value ) {
+
+			this._z = value;
+			this.onChangeCallback();
+
+		}
+
+	},
+
+	"order" : {
+
+		get: function () {
+
+			return this._order;
+
+		},
+
+		set: function ( value ) {
+
+			this._order = value;
+			this.onChangeCallback();
+
+		}
+
+	}
+
+});
+
+Object.assign( Euler.prototype, {
 
 	isEuler: true,
-
-	get x () {
-
-		return this._x;
-
-	},
-
-	set x ( value ) {
-
-		this._x = value;
-		this.onChangeCallback();
-
-	},
-
-	get y () {
-
-		return this._y;
-
-	},
-
-	set y ( value ) {
-
-		this._y = value;
-		this.onChangeCallback();
-
-	},
-
-	get z () {
-
-		return this._z;
-
-	},
-
-	set z ( value ) {
-
-		this._z = value;
-		this.onChangeCallback();
-
-	},
-
-	get order () {
-
-		return this._order;
-
-	},
-
-	set order ( value ) {
-
-		this._order = value;
-		this.onChangeCallback();
-
-	},
 
 	set: function ( x, y, z, order ) {
 
@@ -10274,11 +10243,9 @@ Euler.prototype = {
 
 	setFromQuaternion: function () {
 
-		var matrix;
+		var matrix = new Matrix4();
 
 		return function setFromQuaternion( q, order, update ) {
-
-			if ( matrix === undefined ) matrix = new Matrix4();
 
 			matrix.makeRotationFromQuaternion( q );
 
@@ -10367,7 +10334,7 @@ Euler.prototype = {
 
 	onChangeCallback: function () {}
 
-};
+} );
 
 /**
  * @author mrdoob / http://mrdoob.com/
@@ -10379,9 +10346,7 @@ function Layers() {
 
 }
 
-Layers.prototype = {
-
-	constructor: Layers,
+Object.assign( Layers.prototype, {
 
 	set: function ( channel ) {
 
@@ -10413,7 +10378,7 @@ Layers.prototype = {
 
 	}
 
-};
+} );
 
 /**
  * @author mrdoob / http://mrdoob.com/
@@ -10509,9 +10474,7 @@ function Object3D() {
 Object3D.DefaultUp = new Vector3( 0, 1, 0 );
 Object3D.DefaultMatrixAutoUpdate = true;
 
-Object3D.prototype = {
-
-	constructor: Object3D,
+Object.assign( Object3D.prototype, EventDispatcher.prototype, {
 
 	isObject3D: true,
 
@@ -11141,9 +11104,7 @@ Object3D.prototype = {
 
 	}
 
-};
-
-Object.assign( Object3D.prototype, EventDispatcher.prototype );
+} );
 
 /**
  * @author bhouston / http://clara.io
@@ -11156,9 +11117,7 @@ function Line3( start, end ) {
 
 }
 
-Line3.prototype = {
-
-	constructor: Line3,
+Object.assign( Line3.prototype, {
 
 	set: function ( start, end ) {
 
@@ -11270,7 +11229,7 @@ Line3.prototype = {
 
 	}
 
-};
+} );
 
 /**
  * @author bhouston / http://clara.io
@@ -11285,92 +11244,94 @@ function Triangle( a, b, c ) {
 
 }
 
-Triangle.normal = function () {
+Object.assign( Triangle, {
 
-	var v0 = new Vector3();
+	normal: function () {
 
-	return function normal( a, b, c, optionalTarget ) {
+		var v0 = new Vector3();
 
-		var result = optionalTarget || new Vector3();
+		return function normal( a, b, c, optionalTarget ) {
 
-		result.subVectors( c, b );
-		v0.subVectors( a, b );
-		result.cross( v0 );
+			var result = optionalTarget || new Vector3();
 
-		var resultLengthSq = result.lengthSq();
-		if ( resultLengthSq > 0 ) {
+			result.subVectors( c, b );
+			v0.subVectors( a, b );
+			result.cross( v0 );
 
-			return result.multiplyScalar( 1 / Math.sqrt( resultLengthSq ) );
+			var resultLengthSq = result.lengthSq();
+			if ( resultLengthSq > 0 ) {
 
-		}
+				return result.multiplyScalar( 1 / Math.sqrt( resultLengthSq ) );
 
-		return result.set( 0, 0, 0 );
+			}
 
-	};
+			return result.set( 0, 0, 0 );
 
-}();
+		};
 
-// static/instance method to calculate barycentric coordinates
-// based on: http://www.blackpawn.com/texts/pointinpoly/default.html
-Triangle.barycoordFromPoint = function () {
+	}(),
 
-	var v0 = new Vector3();
-	var v1 = new Vector3();
-	var v2 = new Vector3();
+	// static/instance method to calculate barycentric coordinates
+	// based on: http://www.blackpawn.com/texts/pointinpoly/default.html
+	barycoordFromPoint: function () {
 
-	return function barycoordFromPoint( point, a, b, c, optionalTarget ) {
+		var v0 = new Vector3();
+		var v1 = new Vector3();
+		var v2 = new Vector3();
 
-		v0.subVectors( c, a );
-		v1.subVectors( b, a );
-		v2.subVectors( point, a );
+		return function barycoordFromPoint( point, a, b, c, optionalTarget ) {
 
-		var dot00 = v0.dot( v0 );
-		var dot01 = v0.dot( v1 );
-		var dot02 = v0.dot( v2 );
-		var dot11 = v1.dot( v1 );
-		var dot12 = v1.dot( v2 );
+			v0.subVectors( c, a );
+			v1.subVectors( b, a );
+			v2.subVectors( point, a );
 
-		var denom = ( dot00 * dot11 - dot01 * dot01 );
+			var dot00 = v0.dot( v0 );
+			var dot01 = v0.dot( v1 );
+			var dot02 = v0.dot( v2 );
+			var dot11 = v1.dot( v1 );
+			var dot12 = v1.dot( v2 );
 
-		var result = optionalTarget || new Vector3();
+			var denom = ( dot00 * dot11 - dot01 * dot01 );
 
-		// collinear or singular triangle
-		if ( denom === 0 ) {
+			var result = optionalTarget || new Vector3();
 
-			// arbitrary location outside of triangle?
-			// not sure if this is the best idea, maybe should be returning undefined
-			return result.set( - 2, - 1, - 1 );
+			// collinear or singular triangle
+			if ( denom === 0 ) {
 
-		}
+				// arbitrary location outside of triangle?
+				// not sure if this is the best idea, maybe should be returning undefined
+				return result.set( - 2, - 1, - 1 );
 
-		var invDenom = 1 / denom;
-		var u = ( dot11 * dot02 - dot01 * dot12 ) * invDenom;
-		var v = ( dot00 * dot12 - dot01 * dot02 ) * invDenom;
+			}
 
-		// barycentric coordinates must always sum to 1
-		return result.set( 1 - u - v, v, u );
+			var invDenom = 1 / denom;
+			var u = ( dot11 * dot02 - dot01 * dot12 ) * invDenom;
+			var v = ( dot00 * dot12 - dot01 * dot02 ) * invDenom;
 
-	};
+			// barycentric coordinates must always sum to 1
+			return result.set( 1 - u - v, v, u );
 
-}();
+		};
 
-Triangle.containsPoint = function () {
+	}(),
 
-	var v1 = new Vector3();
+	containsPoint: function () {
 
-	return function containsPoint( point, a, b, c ) {
+		var v1 = new Vector3();
 
-		var result = Triangle.barycoordFromPoint( point, a, b, c, v1 );
+		return function containsPoint( point, a, b, c ) {
 
-		return ( result.x >= 0 ) && ( result.y >= 0 ) && ( ( result.x + result.y ) <= 1 );
+			var result = Triangle.barycoordFromPoint( point, a, b, c, v1 );
 
-	};
+			return ( result.x >= 0 ) && ( result.y >= 0 ) && ( ( result.x + result.y ) <= 1 );
 
-}();
+		};
 
-Triangle.prototype = {
+	}()
 
-	constructor: Triangle,
+} );
+
+Object.assign( Triangle.prototype, {
 
 	set: function ( a, b, c ) {
 
@@ -11459,18 +11420,12 @@ Triangle.prototype = {
 
 	closestPointToPoint: function () {
 
-		var plane, edgeList, projectedPoint, closestPoint;
+		var plane = new Plane();
+		var edgeList = [ new Line3(), new Line3(), new Line3() ];
+		var projectedPoint = new Vector3();
+		var closestPoint = new Vector3();
 
 		return function closestPointToPoint( point, optionalTarget ) {
-
-			if ( plane === undefined ) {
-
-				plane = new Plane();
-				edgeList = [ new Line3(), new Line3(), new Line3() ];
-				projectedPoint = new Vector3();
-				closestPoint = new Vector3();
-
-			}
 
 			var result = optionalTarget || new Vector3();
 			var minDistance = Infinity;
@@ -11526,7 +11481,7 @@ Triangle.prototype = {
 
 	}
 
-};
+} );
 
 /**
  * @author mrdoob / http://mrdoob.com/
@@ -11549,9 +11504,7 @@ function Face3( a, b, c, normal, color, materialIndex ) {
 
 }
 
-Face3.prototype = {
-
-	constructor: Face3,
+Object.assign( Face3.prototype, {
 
 	clone: function () {
 
@@ -11586,7 +11539,7 @@ Face3.prototype = {
 
 	}
 
-};
+} );
 
 /**
  * @author mrdoob / http://mrdoob.com/
@@ -11731,17 +11684,19 @@ function BufferAttribute( array, itemSize, normalized ) {
 
 }
 
-BufferAttribute.prototype = {
+Object.defineProperty( BufferAttribute.prototype, "needsUpdate", {
 
-	constructor: BufferAttribute,
+	set: function(value) { 
+		
+		if ( value === true ) this.version ++;
+	
+	}
+
+});
+
+Object.assign( BufferAttribute.prototype, {
 
 	isBufferAttribute: true,
-
-	set needsUpdate( value ) {
-
-		if ( value === true ) this.version ++;
-
-	},
 
 	setArray: function ( array ) {
 
@@ -12034,7 +11989,7 @@ BufferAttribute.prototype = {
 
 	}
 
-};
+} );
 
 //
 
@@ -12386,6 +12341,24 @@ Object.assign( DirectGeometry.prototype, {
 
 } );
 
+function arrayMax( array ) {
+
+	var length = array.length, max = - Infinity;
+
+	while ( length -- ) {
+
+		if ( array[ length ] > max ) {
+
+			max = array[ length ];
+
+		}
+
+	}
+
+	return max;
+
+}
+
 /**
  * @author mrdoob / http://mrdoob.com/
  * @author kile / http://kile.stravaganza.org/
@@ -12435,9 +12408,7 @@ function Geometry() {
 
 }
 
-Geometry.prototype = {
-
-	constructor: Geometry,
+Object.assign( Geometry.prototype, EventDispatcher.prototype, {
 
 	isGeometry: true,
 
@@ -12488,11 +12459,9 @@ Geometry.prototype = {
 
 		// rotate geometry around world x-axis
 
-		var m1;
+		var m1 = new Matrix4();
 
 		return function rotateX( angle ) {
-
-			if ( m1 === undefined ) m1 = new Matrix4();
 
 			m1.makeRotationX( angle );
 
@@ -12508,11 +12477,9 @@ Geometry.prototype = {
 
 		// rotate geometry around world y-axis
 
-		var m1;
+		var m1 = new Matrix4();
 
 		return function rotateY( angle ) {
-
-			if ( m1 === undefined ) m1 = new Matrix4();
 
 			m1.makeRotationY( angle );
 
@@ -12528,11 +12495,9 @@ Geometry.prototype = {
 
 		// rotate geometry around world z-axis
 
-		var m1;
+		var m1 = new Matrix4();
 
 		return function rotateZ( angle ) {
-
-			if ( m1 === undefined ) m1 = new Matrix4();
 
 			m1.makeRotationZ( angle );
 
@@ -12548,11 +12513,9 @@ Geometry.prototype = {
 
 		// translate geometry
 
-		var m1;
+		var m1 = new Matrix4();
 
 		return function translate( x, y, z ) {
-
-			if ( m1 === undefined ) m1 = new Matrix4();
 
 			m1.makeTranslation( x, y, z );
 
@@ -12568,11 +12531,9 @@ Geometry.prototype = {
 
 		// scale geometry
 
-		var m1;
+		var m1 = new Matrix4();
 
 		return function scale( x, y, z ) {
-
-			if ( m1 === undefined ) m1 = new Matrix4();
 
 			m1.makeScale( x, y, z );
 
@@ -12586,11 +12547,9 @@ Geometry.prototype = {
 
 	lookAt: function () {
 
-		var obj;
+		var obj = new Object3D();
 
 		return function lookAt( vector ) {
-
-			if ( obj === undefined ) obj = new Object3D();
 
 			obj.lookAt( vector );
 
@@ -13090,15 +13049,15 @@ Geometry.prototype = {
 		}
 
 		var normalMatrix,
-		vertexOffset = this.vertices.length,
-		vertices1 = this.vertices,
-		vertices2 = geometry.vertices,
-		faces1 = this.faces,
-		faces2 = geometry.faces,
-		uvs1 = this.faceVertexUvs[ 0 ],
-		uvs2 = geometry.faceVertexUvs[ 0 ],
-		colors1 = this.colors,
-		colors2 = geometry.colors;
+			vertexOffset = this.vertices.length,
+			vertices1 = this.vertices,
+			vertices2 = geometry.vertices,
+			faces1 = this.faces,
+			faces2 = geometry.faces,
+			uvs1 = this.faceVertexUvs[ 0 ],
+			uvs2 = geometry.faceVertexUvs[ 0 ],
+			colors1 = this.colors,
+			colors2 = geometry.colors;
 
 		if ( materialIndexOffset === undefined ) materialIndexOffset = 0;
 
@@ -13135,8 +13094,8 @@ Geometry.prototype = {
 		for ( i = 0, il = faces2.length; i < il; i ++ ) {
 
 			var face = faces2[ i ], faceCopy, normal, color,
-			faceVertexNormals = face.vertexNormals,
-			faceVertexColors = face.vertexColors;
+				faceVertexNormals = face.vertexNormals,
+				faceVertexColors = face.vertexColors;
 
 			faceCopy = new Face3( face.a + vertexOffset, face.b + vertexOffset, face.c + vertexOffset );
 			faceCopy.normal.copy( face.normal );
@@ -13547,28 +13506,28 @@ Geometry.prototype = {
 	clone: function () {
 
 		/*
-		// Handle primitives
+		 // Handle primitives
 
-		var parameters = this.parameters;
+		 var parameters = this.parameters;
 
-		if ( parameters !== undefined ) {
+		 if ( parameters !== undefined ) {
 
-			var values = [];
+		 var values = [];
 
-			for ( var key in parameters ) {
+		 for ( var key in parameters ) {
 
-				values.push( parameters[ key ] );
+		 values.push( parameters[ key ] );
 
-			}
+		 }
 
-			var geometry = Object.create( this.constructor.prototype );
-			this.constructor.apply( geometry, values );
-			return geometry;
+		 var geometry = Object.create( this.constructor.prototype );
+		 this.constructor.apply( geometry, values );
+		 return geometry;
 
-		}
+		 }
 
-		return new this.constructor().copy( this );
-		*/
+		 return new this.constructor().copy( this );
+		 */
 
 		return new Geometry().copy( this );
 
@@ -13814,9 +13773,7 @@ Geometry.prototype = {
 
 	}
 
-};
-
-Object.assign( Geometry.prototype, EventDispatcher.prototype );
+} );
 
 /**
  * @author alteredq / http://alteredqualia.com/
@@ -13846,9 +13803,9 @@ function BufferGeometry() {
 
 }
 
-BufferGeometry.prototype = {
+BufferGeometry.MaxIndex = 65535;
 
-	constructor: BufferGeometry,
+Object.assign( BufferGeometry.prototype, EventDispatcher.prototype, {
 
 	isBufferGeometry: true,
 
@@ -13860,7 +13817,15 @@ BufferGeometry.prototype = {
 
 	setIndex: function ( index ) {
 
-		this.index = index;
+		if ( Array.isArray( index ) ) {
+
+			this.index = new ( arrayMax( index ) > 65535 ? Uint32BufferAttribute : Uint16BufferAttribute )( index, 1 );
+
+		} else {
+
+			this.index = index;
+
+		}
 
 	},
 
@@ -13972,11 +13937,9 @@ BufferGeometry.prototype = {
 
 		// rotate geometry around world x-axis
 
-		var m1;
+		var m1 = new Matrix4();
 
 		return function rotateX( angle ) {
-
-			if ( m1 === undefined ) m1 = new Matrix4();
 
 			m1.makeRotationX( angle );
 
@@ -13992,11 +13955,9 @@ BufferGeometry.prototype = {
 
 		// rotate geometry around world y-axis
 
-		var m1;
+		var m1 = new Matrix4();
 
 		return function rotateY( angle ) {
-
-			if ( m1 === undefined ) m1 = new Matrix4();
 
 			m1.makeRotationY( angle );
 
@@ -14012,11 +13973,9 @@ BufferGeometry.prototype = {
 
 		// rotate geometry around world z-axis
 
-		var m1;
+		var m1 = new Matrix4();
 
 		return function rotateZ( angle ) {
-
-			if ( m1 === undefined ) m1 = new Matrix4();
 
 			m1.makeRotationZ( angle );
 
@@ -14032,11 +13991,9 @@ BufferGeometry.prototype = {
 
 		// translate geometry
 
-		var m1;
+		var m1 = new Matrix4();
 
 		return function translate( x, y, z ) {
-
-			if ( m1 === undefined ) m1 = new Matrix4();
 
 			m1.makeTranslation( x, y, z );
 
@@ -14052,11 +14009,9 @@ BufferGeometry.prototype = {
 
 		// scale geometry
 
-		var m1;
+		var m1 = new Matrix4();
 
 		return function scale( x, y, z ) {
-
-			if ( m1 === undefined ) m1 = new Matrix4();
 
 			m1.makeScale( x, y, z );
 
@@ -14070,11 +14025,9 @@ BufferGeometry.prototype = {
 
 	lookAt: function () {
 
-		var obj;
+		var obj = new Object3D();
 
 		return function lookAt( vector ) {
-
-			if ( obj === undefined ) obj = new Object3D();
 
 			obj.lookAt( vector );
 
@@ -14316,7 +14269,7 @@ BufferGeometry.prototype = {
 
 		if ( geometry.indices.length > 0 ) {
 
-			var TypeArray = geometry.vertices.length > 65535 ? Uint32Array : Uint16Array;
+			var TypeArray = arrayMax( geometry.indices ) > 65535 ? Uint32Array : Uint16Array;
 			var indices = new TypeArray( geometry.indices.length * 3 );
 			this.setIndex( new BufferAttribute( indices, 1 ).copyIndicesArray( geometry.indices ) );
 
@@ -14778,28 +14731,28 @@ BufferGeometry.prototype = {
 	clone: function () {
 
 		/*
-		// Handle primitives
+		 // Handle primitives
 
-		var parameters = this.parameters;
+		 var parameters = this.parameters;
 
-		if ( parameters !== undefined ) {
+		 if ( parameters !== undefined ) {
 
-			var values = [];
+		 var values = [];
 
-			for ( var key in parameters ) {
+		 for ( var key in parameters ) {
 
-				values.push( parameters[ key ] );
+		 values.push( parameters[ key ] );
 
-			}
+		 }
 
-			var geometry = Object.create( this.constructor.prototype );
-			this.constructor.apply( geometry, values );
-			return geometry;
+		 var geometry = Object.create( this.constructor.prototype );
+		 this.constructor.apply( geometry, values );
+		 return geometry;
 
-		}
+		 }
 
-		return new this.constructor().copy( this );
-		*/
+		 return new this.constructor().copy( this );
+		 */
 
 		return new BufferGeometry().copy( this );
 
@@ -14908,11 +14861,7 @@ BufferGeometry.prototype = {
 
 	}
 
-};
-
-BufferGeometry.MaxIndex = 65535;
-
-Object.assign( BufferGeometry.prototype, EventDispatcher.prototype );
+} );
 
 /**
  * @author mrdoob / http://mrdoob.com/
@@ -15304,30 +15253,25 @@ function BoxBufferGeometry( width, height, depth, widthSegments, heightSegments,
 	var scope = this;
 
 	// segments
+
 	widthSegments = Math.floor( widthSegments ) || 1;
 	heightSegments = Math.floor( heightSegments ) || 1;
 	depthSegments = Math.floor( depthSegments ) || 1;
 
-	// these are used to calculate buffer length
-	var vertexCount = calculateVertexCount( widthSegments, heightSegments, depthSegments );
-	var indexCount = calculateIndexCount( widthSegments, heightSegments, depthSegments );
-
 	// buffers
-	var indices = new ( indexCount > 65535 ? Uint32Array : Uint16Array )( indexCount );
-	var vertices = new Float32Array( vertexCount * 3 );
-	var normals = new Float32Array( vertexCount * 3 );
-	var uvs = new Float32Array( vertexCount * 2 );
 
-	// offset variables
-	var vertexBufferOffset = 0;
-	var uvBufferOffset = 0;
-	var indexBufferOffset = 0;
+	var indices = [];
+	var vertices = [];
+	var normals = [];
+	var uvs = [];
+
+	// helper variables
+
 	var numberOfVertices = 0;
-
-	// group variables
 	var groupStart = 0;
 
 	// build each side of the box geometry
+
 	buildPlane( 'z', 'y', 'x', - 1, - 1, depth, height,   width,  depthSegments, heightSegments, 0 ); // px
 	buildPlane( 'z', 'y', 'x',   1, - 1, depth, height, - width,  depthSegments, heightSegments, 1 ); // nx
 	buildPlane( 'x', 'z', 'y',   1,   1, width, depth,    height, widthSegments, depthSegments,  2 ); // py
@@ -15336,42 +15280,15 @@ function BoxBufferGeometry( width, height, depth, widthSegments, heightSegments,
 	buildPlane( 'x', 'y', 'z', - 1, - 1, width, height, - depth,  widthSegments, heightSegments, 5 ); // nz
 
 	// build geometry
-	this.setIndex( new BufferAttribute( indices, 1 ) );
-	this.addAttribute( 'position', new BufferAttribute( vertices, 3 ) );
-	this.addAttribute( 'normal', new BufferAttribute( normals, 3 ) );
-	this.addAttribute( 'uv', new BufferAttribute( uvs, 2 ) );
 
-	// helper functions
-
-	function calculateVertexCount( w, h, d ) {
-
-		var vertices = 0;
-
-		// calculate the amount of vertices for each side (plane)
-		vertices += (w + 1) * (h + 1) * 2; // xy
-		vertices += (w + 1) * (d + 1) * 2; // xz
-		vertices += (d + 1) * (h + 1) * 2; // zy
-
-		return vertices;
-
-	}
-
-	function calculateIndexCount( w, h, d ) {
-
-		var index = 0;
-
-		// calculate the amount of squares for each side
-		index += w * h * 2; // xy
-		index += w * d * 2; // xz
-		index += d * h * 2; // zy
-
-		return index * 6; // two triangles per square => six vertices per square
-
-	}
+	this.setIndex( indices );
+	this.addAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );
+	this.addAttribute( 'normal', new Float32BufferAttribute( normals, 3 ) );
+	this.addAttribute( 'uv', new Float32BufferAttribute( uvs, 2 ) );
 
 	function buildPlane( u, v, w, udir, vdir, width, height, depth, gridX, gridY, materialIndex ) {
 
-		var segmentWidth	= width / gridX;
+		var segmentWidth = width / gridX;
 		var segmentHeight = height / gridY;
 
 		var widthHalf = width / 2;
@@ -15384,50 +15301,54 @@ function BoxBufferGeometry( width, height, depth, widthSegments, heightSegments,
 		var vertexCounter = 0;
 		var groupCount = 0;
 
+		var ix, iy;
+
 		var vector = new Vector3();
 
 		// generate vertices, normals and uvs
 
-		for ( var iy = 0; iy < gridY1; iy ++ ) {
+		for ( iy = 0; iy < gridY1; iy ++ ) {
 
 			var y = iy * segmentHeight - heightHalf;
 
-			for ( var ix = 0; ix < gridX1; ix ++ ) {
+			for ( ix = 0; ix < gridX1; ix ++ ) {
 
 				var x = ix * segmentWidth - widthHalf;
 
 				// set values to correct vector component
+
 				vector[ u ] = x * udir;
 				vector[ v ] = y * vdir;
 				vector[ w ] = depthHalf;
 
 				// now apply vector to vertex buffer
-				vertices[ vertexBufferOffset ] = vector.x;
-				vertices[ vertexBufferOffset + 1 ] = vector.y;
-				vertices[ vertexBufferOffset + 2 ] = vector.z;
+
+				vertices.push( vector.x, vector.y, vector.z );
 
 				// set values to correct vector component
+
 				vector[ u ] = 0;
 				vector[ v ] = 0;
 				vector[ w ] = depth > 0 ? 1 : - 1;
 
 				// now apply vector to normal buffer
-				normals[ vertexBufferOffset ] = vector.x;
-				normals[ vertexBufferOffset + 1 ] = vector.y;
-				normals[ vertexBufferOffset + 2 ] = vector.z;
+
+				normals.push( vector.x, vector.y, vector.z );
 
 				// uvs
-				uvs[ uvBufferOffset ] = ix / gridX;
-				uvs[ uvBufferOffset + 1 ] = 1 - ( iy / gridY );
 
-				// update offsets and counters
-				vertexBufferOffset += 3;
-				uvBufferOffset += 2;
+				uvs.push( ix / gridX );
+				uvs.push( 1 - ( iy / gridY ) );
+
+				// counters
+
 				vertexCounter += 1;
 
 			}
 
 		}
+
+		// indices
 
 		// 1. you need three indices to draw a single face
 		// 2. a single segment consists of two faces
@@ -15437,24 +15358,18 @@ function BoxBufferGeometry( width, height, depth, widthSegments, heightSegments,
 
 			for ( ix = 0; ix < gridX; ix ++ ) {
 
-				// indices
 				var a = numberOfVertices + ix + gridX1 * iy;
 				var b = numberOfVertices + ix + gridX1 * ( iy + 1 );
 				var c = numberOfVertices + ( ix + 1 ) + gridX1 * ( iy + 1 );
 				var d = numberOfVertices + ( ix + 1 ) + gridX1 * iy;
 
-				// face one
-				indices[ indexBufferOffset ] = a;
-				indices[ indexBufferOffset + 1 ] = b;
-				indices[ indexBufferOffset + 2 ] = d;
+				// faces
 
-				// face two
-				indices[ indexBufferOffset + 3 ] = b;
-				indices[ indexBufferOffset + 4 ] = c;
-				indices[ indexBufferOffset + 5 ] = d;
+				indices.push( a, b, d );
+				indices.push( b, c, d );
 
-				// update offsets and counters
-				indexBufferOffset += 6;
+				// increase counter
+
 				groupCount += 6;
 
 			}
@@ -15462,12 +15377,15 @@ function BoxBufferGeometry( width, height, depth, widthSegments, heightSegments,
 		}
 
 		// add a group to the geometry. this will ensure multi material support
+
 		scope.addGroup( groupStart, groupCount, materialIndex );
 
 		// calculate new start value for groups
+
 		groupStart += groupCount;
 
 		// update total number of vertices
+
 		numberOfVertices += vertexCounter;
 
 	}
@@ -15504,6 +15422,8 @@ PlaneGeometry.prototype.constructor = PlaneGeometry;
 
 /**
  * @author mrdoob / http://mrdoob.com/
+ * @author Mugen87 / https://github.com/Mugen87
+ *
  * based on http://papervision3d.googlecode.com/svn/trunk/as3/trunk/src/org/papervision3d/objects/primitives/Plane.as
  */
 
@@ -15532,67 +15452,62 @@ function PlaneBufferGeometry( width, height, widthSegments, heightSegments ) {
 	var segment_width = width / gridX;
 	var segment_height = height / gridY;
 
-	var vertices = new Float32Array( gridX1 * gridY1 * 3 );
-	var normals = new Float32Array( gridX1 * gridY1 * 3 );
-	var uvs = new Float32Array( gridX1 * gridY1 * 2 );
+	var ix, iy;
 
-	var offset = 0;
-	var offset2 = 0;
+	// buffers
 
-	for ( var iy = 0; iy < gridY1; iy ++ ) {
+	var indices = [];
+	var vertices = [];
+	var normals = [];
+	var uvs = [];
+
+	// generate vertices, normals and uvs
+
+	for ( iy = 0; iy < gridY1; iy ++ ) {
 
 		var y = iy * segment_height - height_half;
 
-		for ( var ix = 0; ix < gridX1; ix ++ ) {
+		for ( ix = 0; ix < gridX1; ix ++ ) {
 
 			var x = ix * segment_width - width_half;
 
-			vertices[ offset ] = x;
-			vertices[ offset + 1 ] = - y;
+			vertices.push( x, - y, 0 );
 
-			normals[ offset + 2 ] = 1;
+			normals.push( 0, 0, 1 );
 
-			uvs[ offset2 ] = ix / gridX;
-			uvs[ offset2 + 1 ] = 1 - ( iy / gridY );
-
-			offset += 3;
-			offset2 += 2;
+			uvs.push( ix / gridX );
+			uvs.push( 1 - ( iy / gridY ) );
 
 		}
 
 	}
 
-	offset = 0;
+	// indices
 
-	var indices = new ( ( vertices.length / 3 ) > 65535 ? Uint32Array : Uint16Array )( gridX * gridY * 6 );
+	for ( iy = 0; iy < gridY; iy ++ ) {
 
-	for ( var iy = 0; iy < gridY; iy ++ ) {
-
-		for ( var ix = 0; ix < gridX; ix ++ ) {
+		for ( ix = 0; ix < gridX; ix ++ ) {
 
 			var a = ix + gridX1 * iy;
 			var b = ix + gridX1 * ( iy + 1 );
 			var c = ( ix + 1 ) + gridX1 * ( iy + 1 );
 			var d = ( ix + 1 ) + gridX1 * iy;
 
-			indices[ offset ] = a;
-			indices[ offset + 1 ] = b;
-			indices[ offset + 2 ] = d;
+			// faces
 
-			indices[ offset + 3 ] = b;
-			indices[ offset + 4 ] = c;
-			indices[ offset + 5 ] = d;
-
-			offset += 6;
+			indices.push( a, b, d );
+			indices.push( b, c, d );
 
 		}
 
 	}
 
-	this.setIndex( new BufferAttribute( indices, 1 ) );
-	this.addAttribute( 'position', new BufferAttribute( vertices, 3 ) );
-	this.addAttribute( 'normal', new BufferAttribute( normals, 3 ) );
-	this.addAttribute( 'uv', new BufferAttribute( uvs, 2 ) );
+	// build geometry
+
+	this.setIndex( indices );
+	this.addAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );
+	this.addAttribute( 'normal', new Float32BufferAttribute( normals, 3 ) );
+	this.addAttribute( 'uv', new Float32BufferAttribute( uvs, 2 ) );
 
 }
 
@@ -16040,9 +15955,10 @@ function WebGLIndexedBufferRenderer( gl, extensions, infoRender ) {
 			size = 2;
 
 		} else {
-			
+
 			type = gl.UNSIGNED_BYTE;
 			size = 1;
+
 		}
 
 	}
@@ -17603,7 +17519,6 @@ function WebGLObjects( gl, properties, info ) {
 
 		var index = geometry.index;
 		var attributes = geometry.attributes;
-		var position = attributes.position;
 
 		// console.time( 'wireframe' );
 
@@ -17639,8 +17554,7 @@ function WebGLObjects( gl, properties, info ) {
 
 		// console.timeEnd( 'wireframe' );
 
-		var TypeArray = position.count > 65535 ? Uint32Array : Uint16Array;
-		var attribute = new BufferAttribute( new TypeArray( indices ), 1 );
+		var attribute = new ( arrayMax( indices ) > 65535 ? Uint32BufferAttribute : Uint16BufferAttribute )( indices, 1 );
 
 		updateAttribute( attribute, gl.ELEMENT_ARRAY_BUFFER );
 
@@ -20055,25 +19969,8 @@ function WebGLRenderer( parameters ) {
 
 	//
 
-	var backgroundCamera = new OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
-	var backgroundCamera2 = new PerspectiveCamera();
-	var backgroundPlaneMesh = new Mesh(
-		new PlaneBufferGeometry( 2, 2 ),
-		new MeshBasicMaterial( { depthTest: false, depthWrite: false, fog: false } )
-	);
-	var backgroundBoxShader = ShaderLib[ 'cube' ];
-	var backgroundBoxMesh = new Mesh(
-		new BoxBufferGeometry( 5, 5, 5 ),
-		new ShaderMaterial( {
-			uniforms: backgroundBoxShader.uniforms,
-			vertexShader: backgroundBoxShader.vertexShader,
-			fragmentShader: backgroundBoxShader.fragmentShader,
-			side: BackSide,
-			depthTest: false,
-			depthWrite: false,
-			fog: false
-		} )
-	);
+	var backgroundPlaneCamera, backgroundPlaneMesh;
+	var backgroundBoxCamera, backgroundBoxMesh;
 
 	//
 
@@ -20944,25 +20841,56 @@ function WebGLRenderer( parameters ) {
 
 		if ( background && background.isCubeTexture ) {
 
-			backgroundCamera2.projectionMatrix.copy( camera.projectionMatrix );
+			if ( backgroundBoxCamera === undefined ) {
 
-			backgroundCamera2.matrixWorld.extractRotation( camera.matrixWorld );
-			backgroundCamera2.matrixWorldInverse.getInverse( backgroundCamera2.matrixWorld );
+				backgroundBoxCamera = new PerspectiveCamera();
+
+				backgroundBoxMesh = new Mesh(
+					new BoxBufferGeometry( 5, 5, 5 ),
+					new ShaderMaterial( {
+						uniforms: ShaderLib.cube.uniforms,
+						vertexShader: ShaderLib.cube.vertexShader,
+						fragmentShader: ShaderLib.cube.fragmentShader,
+						side: BackSide,
+						depthTest: false,
+						depthWrite: false,
+						fog: false
+					} )
+				);
+
+			}
+
+			backgroundBoxCamera.projectionMatrix.copy( camera.projectionMatrix );
+
+			backgroundBoxCamera.matrixWorld.extractRotation( camera.matrixWorld );
+			backgroundBoxCamera.matrixWorldInverse.getInverse( backgroundBoxCamera.matrixWorld );
+
 
 			backgroundBoxMesh.material.uniforms[ "tCube" ].value = background;
-			backgroundBoxMesh.modelViewMatrix.multiplyMatrices( backgroundCamera2.matrixWorldInverse, backgroundBoxMesh.matrixWorld );
+			backgroundBoxMesh.modelViewMatrix.multiplyMatrices( backgroundBoxCamera.matrixWorldInverse, backgroundBoxMesh.matrixWorld );
 
 			objects.update( backgroundBoxMesh );
 
-			_this.renderBufferDirect( backgroundCamera2, null, backgroundBoxMesh.geometry, backgroundBoxMesh.material, backgroundBoxMesh, null );
+			_this.renderBufferDirect( backgroundBoxCamera, null, backgroundBoxMesh.geometry, backgroundBoxMesh.material, backgroundBoxMesh, null );
 
 		} else if ( background && background.isTexture ) {
+
+			if ( backgroundPlaneCamera === undefined ) {
+
+				backgroundPlaneCamera = new OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
+
+				backgroundPlaneMesh = new Mesh(
+					new PlaneBufferGeometry( 2, 2 ),
+					new MeshBasicMaterial( { depthTest: false, depthWrite: false, fog: false } )
+				);
+
+			}
 
 			backgroundPlaneMesh.material.map = background;
 
 			objects.update( backgroundPlaneMesh );
 
-			_this.renderBufferDirect( backgroundCamera, null, backgroundPlaneMesh.geometry, backgroundPlaneMesh.material, backgroundPlaneMesh, null );
+			_this.renderBufferDirect( backgroundPlaneCamera, null, backgroundPlaneMesh.geometry, backgroundPlaneMesh.material, backgroundPlaneMesh, null );
 
 		}
 
@@ -22967,7 +22895,6 @@ function LOD() {
 
 }
 
-
 LOD.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 	constructor: LOD,
@@ -23387,7 +23314,6 @@ function SkinnedMesh( geometry, material, useVertexTexture ) {
 	this.bind( new Skeleton( bones, undefined, useVertexTexture ), this.matrixWorld );
 
 }
-
 
 SkinnedMesh.prototype = Object.assign( Object.create( Mesh.prototype ), {
 
@@ -24142,49 +24068,49 @@ DepthTexture.prototype.isDepthTexture = true;
 
 /**
  * @author mrdoob / http://mrdoob.com/
+ * @author Mugen87 / https://github.com/Mugen87
  */
 
 function WireframeGeometry( geometry ) {
 
 	BufferGeometry.call( this );
 
-	var edge = [ 0, 0 ], hash = {};
+	this.type = 'WireframeGeometry';
 
-	function sortFunction( a, b ) {
+	// buffer
 
-		return a - b;
+	var vertices = [];
 
-	}
+	// helper variables
 
-	var keys = [ 'a', 'b', 'c' ];
+	var i, j, l, o, ol;
+	var edge = [ 0, 0 ], edges = {}, e;
+	var key, keys = [ 'a', 'b', 'c' ];
+	var vertex;
+
+	// different logic for Geometry and BufferGeometry
 
 	if ( geometry && geometry.isGeometry ) {
 
-		var vertices = geometry.vertices;
+		// create a data structure that contains all edges without duplicates
+
 		var faces = geometry.faces;
-		var numEdges = 0;
 
-		// allocate maximal size
-		var edges = new Uint32Array( 6 * faces.length );
-
-		for ( var i = 0, l = faces.length; i < l; i ++ ) {
+		for ( i = 0, l = faces.length; i < l; i ++ ) {
 
 			var face = faces[ i ];
 
-			for ( var j = 0; j < 3; j ++ ) {
+			for ( j = 0; j < 3; j ++ ) {
 
 				edge[ 0 ] = face[ keys[ j ] ];
 				edge[ 1 ] = face[ keys[ ( j + 1 ) % 3 ] ];
-				edge.sort( sortFunction );
+				edge.sort( sortFunction ); // sorting prevents duplicates
 
-				var key = edge.toString();
+				key = edge.toString();
 
-				if ( hash[ key ] === undefined ) {
+				if ( edges[ key ] === undefined ) {
 
-					edges[ 2 * numEdges ] = edge[ 0 ];
-					edges[ 2 * numEdges + 1 ] = edge[ 1 ];
-					hash[ key ] = true;
-					numEdges ++;
+					edges[ key ] = { index1: edge[ 0 ], index2: edge[ 1 ] };
 
 				}
 
@@ -24192,68 +24118,64 @@ function WireframeGeometry( geometry ) {
 
 		}
 
-		var coords = new Float32Array( numEdges * 2 * 3 );
+		// generate vertices
 
-		for ( var i = 0, l = numEdges; i < l; i ++ ) {
+		for ( key in edges ) {
 
-			for ( var j = 0; j < 2; j ++ ) {
+			e = edges[ key ];
 
-				var vertex = vertices[ edges [ 2 * i + j ] ];
+			vertex = geometry.vertices[ e.index1 ];
+			vertices.push( vertex.x, vertex.y, vertex.z );
 
-				var index = 6 * i + 3 * j;
-				coords[ index + 0 ] = vertex.x;
-				coords[ index + 1 ] = vertex.y;
-				coords[ index + 2 ] = vertex.z;
-
-			}
+			vertex = geometry.vertices[ e.index2 ];
+			vertices.push( vertex.x, vertex.y, vertex.z );
 
 		}
 
-		this.addAttribute( 'position', new BufferAttribute( coords, 3 ) );
-
 	} else if ( geometry && geometry.isBufferGeometry ) {
+
+		var position, indices, groups;
+		var group, start, count;
+		var index1, index2;
+
+		vertex = new Vector3();
 
 		if ( geometry.index !== null ) {
 
-			// Indexed BufferGeometry
+			// indexed BufferGeometry
 
-			var indices = geometry.index.array;
-			var vertices = geometry.attributes.position;
-			var groups = geometry.groups;
-			var numEdges = 0;
+			position = geometry.attributes.position;
+			indices = geometry.index;
+			groups = geometry.groups;
 
 			if ( groups.length === 0 ) {
 
-				geometry.addGroup( 0, indices.length );
+				geometry.addGroup( 0, indices.count );
 
 			}
 
-			// allocate maximal size
-			var edges = new Uint32Array( 2 * indices.length );
+			// create a data structure that contains all eges without duplicates
 
-			for ( var o = 0, ol = groups.length; o < ol; ++ o ) {
+			for ( o = 0, ol = groups.length; o < ol; ++ o ) {
 
-				var group = groups[ o ];
+				group = groups[ o ];
 
-				var start = group.start;
-				var count = group.count;
+				start = group.start;
+				count = group.count;
 
-				for ( var i = start, il = start + count; i < il; i += 3 ) {
+				for ( i = start, l = ( start + count ); i < l; i += 3 ) {
 
-					for ( var j = 0; j < 3; j ++ ) {
+					for ( j = 0; j < 3; j ++ ) {
 
-						edge[ 0 ] = indices[ i + j ];
-						edge[ 1 ] = indices[ i + ( j + 1 ) % 3 ];
-						edge.sort( sortFunction );
+						edge[ 0 ] = indices.getX( i + j );
+						edge[ 1 ] = indices.getX( i + ( j + 1 ) % 3 );
+						edge.sort( sortFunction ); // sorting prevents duplicates
 
-						var key = edge.toString();
+						key = edge.toString();
 
-						if ( hash[ key ] === undefined ) {
+						if ( edges[ key ] === undefined ) {
 
-							edges[ 2 * numEdges ] = edge[ 0 ];
-							edges[ 2 * numEdges + 1 ] = edge[ 1 ];
-							hash[ key ] = true;
-							numEdges ++;
+							edges[ key ] = { index1: edge[ 0 ], index2: edge[ 1 ] };
 
 						}
 
@@ -24263,58 +24185,58 @@ function WireframeGeometry( geometry ) {
 
 			}
 
-			var coords = new Float32Array( numEdges * 2 * 3 );
+			// generate vertices
 
-			for ( var i = 0, l = numEdges; i < l; i ++ ) {
+			for ( key in edges ) {
 
-				for ( var j = 0; j < 2; j ++ ) {
+				e = edges[ key ];
 
-					var index = 6 * i + 3 * j;
-					var index2 = edges[ 2 * i + j ];
+				vertex.fromBufferAttribute( position, e.index1 );
+				vertices.push( vertex.x, vertex.y, vertex.z );
 
-					coords[ index + 0 ] = vertices.getX( index2 );
-					coords[ index + 1 ] = vertices.getY( index2 );
-					coords[ index + 2 ] = vertices.getZ( index2 );
-
-				}
+				vertex.fromBufferAttribute( position, e.index2 );
+				vertices.push( vertex.x, vertex.y, vertex.z );
 
 			}
-
-			this.addAttribute( 'position', new BufferAttribute( coords, 3 ) );
 
 		} else {
 
 			// non-indexed BufferGeometry
 
-			var vertices = geometry.attributes.position.array;
-			var numEdges = vertices.length / 3;
-			var numTris = numEdges / 3;
+			position = geometry.attributes.position;
 
-			var coords = new Float32Array( numEdges * 2 * 3 );
+			for ( i = 0, l = ( position.count / 3 ); i < l; i ++ ) {
 
-			for ( var i = 0, l = numTris; i < l; i ++ ) {
+				for ( j = 0; j < 3; j ++ ) {
 
-				for ( var j = 0; j < 3; j ++ ) {
+					// three edges per triangle, an edge is represented as (index1, index2)
+					// e.g. the first triangle has the following edges: (0,1),(1,2),(2,0)
 
-					var index = 18 * i + 6 * j;
+					index1 = 3 * i + j;
+					vertex.fromBufferAttribute( position, index1 );
+					vertices.push( vertex.x, vertex.y, vertex.z );
 
-					var index1 = 9 * i + 3 * j;
-					coords[ index + 0 ] = vertices[ index1 ];
-					coords[ index + 1 ] = vertices[ index1 + 1 ];
-					coords[ index + 2 ] = vertices[ index1 + 2 ];
-
-					var index2 = 9 * i + 3 * ( ( j + 1 ) % 3 );
-					coords[ index + 3 ] = vertices[ index2 ];
-					coords[ index + 4 ] = vertices[ index2 + 1 ];
-					coords[ index + 5 ] = vertices[ index2 + 2 ];
+					index2 = 3 * i + ( ( j + 1 ) % 3 );
+					vertex.fromBufferAttribute( position, index2 );
+					vertices.push( vertex.x, vertex.y, vertex.z );
 
 				}
 
 			}
 
-			this.addAttribute( 'position', new BufferAttribute( coords, 3 ) );
-
 		}
+
+	}
+
+	// build geometry
+
+	this.addAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );
+
+	// custom array sort function
+
+	function sortFunction( a, b ) {
+
+		return a - b;
 
 	}
 
@@ -24369,25 +24291,27 @@ function ParametricBufferGeometry( func, slices, stacks ) {
 		stacks: stacks
 	};
 
-	// generate vertices and uvs
+	// buffers
 
+	var indices = [];
 	var vertices = [];
 	var uvs = [];
 
-	var i, j, p;
-	var u, v;
+	var i, j;
+
+	// generate vertices and uvs
 
 	var sliceCount = slices + 1;
 
 	for ( i = 0; i <= stacks; i ++ ) {
 
-		v = i / stacks;
+		var v = i / stacks;
 
 		for ( j = 0; j <= slices; j ++ ) {
 
-			u = j / slices;
+			var u = j / slices;
 
-			p = func( u, v );
+			var p = func( u, v );
 			vertices.push( p.x, p.y, p.z );
 
 			uvs.push( u, v );
@@ -24398,17 +24322,14 @@ function ParametricBufferGeometry( func, slices, stacks ) {
 
 	// generate indices
 
-	var indices = [];
-	var a, b, c, d;
-
 	for ( i = 0; i < stacks; i ++ ) {
 
 		for ( j = 0; j < slices; j ++ ) {
 
-			a = i * sliceCount + j;
-			b = i * sliceCount + j + 1;
-			c = ( i + 1 ) * sliceCount + j + 1;
-			d = ( i + 1 ) * sliceCount + j;
+			var a = i * sliceCount + j;
+			var b = i * sliceCount + j + 1;
+			var c = ( i + 1 ) * sliceCount + j + 1;
+			var d = ( i + 1 ) * sliceCount + j;
 
 			// faces one and two
 
@@ -24421,7 +24342,7 @@ function ParametricBufferGeometry( func, slices, stacks ) {
 
 	// build geometry
 
-	this.setIndex( new ( indices.length > 65535 ? Uint32BufferAttribute : Uint16BufferAttribute )( indices, 1 ) );
+	this.setIndex( indices );
 	this.addAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );
 	this.addAttribute( 'uv', new Float32BufferAttribute( uvs, 2 ) );
 
@@ -24504,8 +24425,6 @@ function PolyhedronBufferGeometry( vertices, indices, radius, detail ) {
 	this.addAttribute( 'normal', new Float32BufferAttribute( vertexBuffer.slice(), 3 ) );
 	this.addAttribute( 'uv', new Float32BufferAttribute( uvBuffer, 2 ) );
 	this.normalizeNormals();
-
-	this.boundingSphere = new Sphere( new Vector3(), radius );
 
 	// helper functions
 
@@ -25097,7 +25016,7 @@ function TubeBufferGeometry( path, tubularSegments, radius, radialSegments, clos
 
 	// build geometry
 
-	this.setIndex( new ( indices.length > 65535 ? Uint32BufferAttribute : Uint16BufferAttribute )( indices, 1 ) );
+	this.setIndex( indices );
 	this.addAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );
 	this.addAttribute( 'normal', new Float32BufferAttribute( normals, 3 ) );
 	this.addAttribute( 'uv', new Float32BufferAttribute( uvs, 2 ) );
@@ -25271,18 +25190,16 @@ function TorusKnotBufferGeometry( radius, tube, tubularSegments, radialSegments,
 	p = p || 2;
 	q = q || 3;
 
-	// used to calculate buffer length
-	var vertexCount = ( ( radialSegments + 1 ) * ( tubularSegments + 1 ) );
-	var indexCount = radialSegments * tubularSegments * 2 * 3;
-
 	// buffers
-	var indices = new BufferAttribute( new ( indexCount > 65535 ? Uint32Array : Uint16Array )( indexCount ), 1 );
-	var vertices = new BufferAttribute( new Float32Array( vertexCount * 3 ), 3 );
-	var normals = new BufferAttribute( new Float32Array( vertexCount * 3 ), 3 );
-	var uvs = new BufferAttribute( new Float32Array( vertexCount * 2 ), 2 );
+
+	var indices = [];
+	var vertices = [];
+	var normals = [];
+	var uvs = [];
 
 	// helper variables
-	var i, j, index = 0, indexOffset = 0;
+
+	var i, j;
 
 	var vertex = new Vector3();
 	var normal = new Vector3();
@@ -25337,20 +25254,18 @@ function TorusKnotBufferGeometry( radius, tube, tubularSegments, radialSegments,
 			vertex.y = P1.y + ( cx * N.y + cy * B.y );
 			vertex.z = P1.z + ( cx * N.z + cy * B.z );
 
-			// vertex
-			vertices.setXYZ( index, vertex.x, vertex.y, vertex.z );
+			vertices.push( vertex.x, vertex.y, vertex.z );
 
 			// normal (P1 is always the center/origin of the extrusion, thus we can use it to calculate the normal)
+
 			normal.subVectors( vertex, P1 ).normalize();
-			normals.setXYZ( index, normal.x, normal.y, normal.z );
+
+			normals.push( normal.x, normal.y, normal.z );
 
 			// uv
-			uv.x = i / tubularSegments;
-			uv.y = j / radialSegments;
-			uvs.setXY( index, uv.x, uv.y );
 
-			// increase index
-			index ++;
+			uvs.push( i / tubularSegments );
+			uvs.push( j / radialSegments );
 
 		}
 
@@ -25363,20 +25278,16 @@ function TorusKnotBufferGeometry( radius, tube, tubularSegments, radialSegments,
 		for ( i = 1; i <= radialSegments; i ++ ) {
 
 			// indices
+
 			var a = ( radialSegments + 1 ) * ( j - 1 ) + ( i - 1 );
 			var b = ( radialSegments + 1 ) * j + ( i - 1 );
 			var c = ( radialSegments + 1 ) * j + i;
 			var d = ( radialSegments + 1 ) * ( j - 1 ) + i;
 
-			// face one
-			indices.setX( indexOffset, a ); indexOffset ++;
-			indices.setX( indexOffset, b ); indexOffset ++;
-			indices.setX( indexOffset, d ); indexOffset ++;
+			// faces
 
-			// face two
-			indices.setX( indexOffset, b ); indexOffset ++;
-			indices.setX( indexOffset, c ); indexOffset ++;
-			indices.setX( indexOffset, d ); indexOffset ++;
+			indices.push( a, b, d );
+			indices.push( b, c, d );
 
 		}
 
@@ -25385,9 +25296,9 @@ function TorusKnotBufferGeometry( radius, tube, tubularSegments, radialSegments,
 	// build geometry
 
 	this.setIndex( indices );
-	this.addAttribute( 'position', vertices );
-	this.addAttribute( 'normal', normals );
-	this.addAttribute( 'uv', uvs );
+	this.addAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );
+	this.addAttribute( 'normal', new Float32BufferAttribute( normals, 3 ) );
+	this.addAttribute( 'uv', new Float32BufferAttribute( uvs, 2 ) );
 
 	// this function calculates the current position on the torus curve
 
@@ -25460,22 +25371,15 @@ function TorusBufferGeometry( radius, tube, radialSegments, tubularSegments, arc
 	tubularSegments = Math.floor( tubularSegments ) || 6;
 	arc = arc || Math.PI * 2;
 
-	// used to calculate buffer length
-	var vertexCount = ( ( radialSegments + 1 ) * ( tubularSegments + 1 ) );
-	var indexCount = radialSegments * tubularSegments * 2 * 3;
-
 	// buffers
-	var indices = new ( indexCount > 65535 ? Uint32Array : Uint16Array )( indexCount );
-	var vertices = new Float32Array( vertexCount * 3 );
-	var normals = new Float32Array( vertexCount * 3 );
-	var uvs = new Float32Array( vertexCount * 2 );
 
-	// offset variables
-	var vertexBufferOffset = 0;
-	var uvBufferOffset = 0;
-	var indexBufferOffset = 0;
+	var indices = [];
+	var vertices = [];
+	var normals = [];
+	var uvs = [];
 
 	// helper variables
+
 	var center = new Vector3();
 	var vertex = new Vector3();
 	var normal = new Vector3();
@@ -25492,32 +25396,25 @@ function TorusBufferGeometry( radius, tube, radialSegments, tubularSegments, arc
 			var v = j / radialSegments * Math.PI * 2;
 
 			// vertex
+
 			vertex.x = ( radius + tube * Math.cos( v ) ) * Math.cos( u );
 			vertex.y = ( radius + tube * Math.cos( v ) ) * Math.sin( u );
 			vertex.z = tube * Math.sin( v );
 
-			vertices[ vertexBufferOffset ] = vertex.x;
-			vertices[ vertexBufferOffset + 1 ] = vertex.y;
-			vertices[ vertexBufferOffset + 2 ] = vertex.z;
-
-			// this vector is used to calculate the normal
-			center.x = radius * Math.cos( u );
-			center.y = radius * Math.sin( u );
+			vertices.push( vertex.x, vertex.y, vertex.z );
 
 			// normal
+
+			center.x = radius * Math.cos( u );
+			center.y = radius * Math.sin( u );
 			normal.subVectors( vertex, center ).normalize();
 
-			normals[ vertexBufferOffset ] = normal.x;
-			normals[ vertexBufferOffset + 1 ] = normal.y;
-			normals[ vertexBufferOffset + 2 ] = normal.z;
+			normals.push( normal.x, normal.y, normal.z );
 
 			// uv
-			uvs[ uvBufferOffset ] = i / tubularSegments;
-			uvs[ uvBufferOffset + 1 ] = j / radialSegments;
 
-			// update offsets
-			vertexBufferOffset += 3;
-			uvBufferOffset += 2;
+			uvs.push( i / tubularSegments );
+			uvs.push( j / radialSegments );
 
 		}
 
@@ -25530,33 +25427,27 @@ function TorusBufferGeometry( radius, tube, radialSegments, tubularSegments, arc
 		for ( i = 1; i <= tubularSegments; i ++ ) {
 
 			// indices
+
 			var a = ( tubularSegments + 1 ) * j + i - 1;
 			var b = ( tubularSegments + 1 ) * ( j - 1 ) + i - 1;
 			var c = ( tubularSegments + 1 ) * ( j - 1 ) + i;
 			var d = ( tubularSegments + 1 ) * j + i;
 
-			// face one
-			indices[ indexBufferOffset ] = a;
-			indices[ indexBufferOffset + 1 ] = b;
-			indices[ indexBufferOffset + 2 ] = d;
+			// faces
 
-			// face two
-			indices[ indexBufferOffset + 3 ] = b;
-			indices[ indexBufferOffset + 4 ] = c;
-			indices[ indexBufferOffset + 5 ] = d;
-
-			// update offset
-			indexBufferOffset += 6;
+			indices.push( a, b, d );
+			indices.push( b, c, d );
 
 		}
 
 	}
 
 	// build geometry
-	this.setIndex( new BufferAttribute( indices, 1 ) );
-	this.addAttribute( 'position', new BufferAttribute( vertices, 3 ) );
-	this.addAttribute( 'normal', new BufferAttribute( normals, 3 ) );
-	this.addAttribute( 'uv', new BufferAttribute( uvs, 2 ) );
+
+	this.setIndex( indices );
+	this.addAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );
+	this.addAttribute( 'normal', new Float32BufferAttribute( normals, 3 ) );
+	this.addAttribute( 'uv', new Float32BufferAttribute( uvs, 2 ) );
 
 }
 
@@ -26275,7 +26166,7 @@ var ShapeUtils = {
  *  extrudePath: <THREE.Curve> // curve to extrude shape along
  *  frames: <Object> // containing arrays of tangents, normals, binormals
  *
- *  uvGenerator: <Object> // object that provides UV generator functions
+ *  UVGenerator: <Object> // object that provides UV generator functions
  *
  * }
  **/
@@ -26981,7 +26872,7 @@ function TextGeometry( text, parameters ) {
 
 	var font = parameters.font;
 
-	if ( (font && font.isFont) === false ) {
+	if ( ( font && font.isFont ) === false ) {
 
 		console.error( 'THREE.TextGeometry: font parameter is not an instance of THREE.Font.' );
 		return new Geometry();
@@ -27038,6 +26929,7 @@ SphereGeometry.prototype.constructor = SphereGeometry;
 
 /**
  * @author benaadams / https://twitter.com/ben_a_adams
+ * @author Mugen87 / https://github.com/Mugen87
  */
 
 function SphereBufferGeometry( radius, widthSegments, heightSegments, phiStart, phiLength, thetaStart, thetaLength ) {
@@ -27069,68 +26961,82 @@ function SphereBufferGeometry( radius, widthSegments, heightSegments, phiStart, 
 
 	var thetaEnd = thetaStart + thetaLength;
 
-	var vertexCount = ( ( widthSegments + 1 ) * ( heightSegments + 1 ) );
+	var ix, iy;
 
-	var positions = new BufferAttribute( new Float32Array( vertexCount * 3 ), 3 );
-	var normals = new BufferAttribute( new Float32Array( vertexCount * 3 ), 3 );
-	var uvs = new BufferAttribute( new Float32Array( vertexCount * 2 ), 2 );
+	var index = 0;
+	var grid = [];
 
-	var index = 0, vertices = [], normal = new Vector3();
+	var vertex = new Vector3();
+	var normal = new Vector3();
 
-	for ( var y = 0; y <= heightSegments; y ++ ) {
+	// buffers
+
+	var indices = [];
+	var vertices = [];
+	var normals = [];
+	var uvs = [];
+
+	// generate vertices, normals and uvs
+
+	for ( iy = 0; iy <= heightSegments; iy ++ ) {
 
 		var verticesRow = [];
 
-		var v = y / heightSegments;
+		var v = iy / heightSegments;
 
-		for ( var x = 0; x <= widthSegments; x ++ ) {
+		for ( ix = 0; ix <= widthSegments; ix ++ ) {
 
-			var u = x / widthSegments;
+			var u = ix / widthSegments;
 
-			var px = - radius * Math.cos( phiStart + u * phiLength ) * Math.sin( thetaStart + v * thetaLength );
-			var py = radius * Math.cos( thetaStart + v * thetaLength );
-			var pz = radius * Math.sin( phiStart + u * phiLength ) * Math.sin( thetaStart + v * thetaLength );
+			// vertex
 
-			normal.set( px, py, pz ).normalize();
+			vertex.x = - radius * Math.cos( phiStart + u * phiLength ) * Math.sin( thetaStart + v * thetaLength );
+			vertex.y = radius * Math.cos( thetaStart + v * thetaLength );
+			vertex.z = radius * Math.sin( phiStart + u * phiLength ) * Math.sin( thetaStart + v * thetaLength );
 
-			positions.setXYZ( index, px, py, pz );
-			normals.setXYZ( index, normal.x, normal.y, normal.z );
-			uvs.setXY( index, u, 1 - v );
+			vertices.push( vertex.x, vertex.y, vertex.z );
 
-			verticesRow.push( index );
+			// normal
 
-			index ++;
+			normal.set( vertex.x, vertex.y, vertex.z ).normalize();
+			normals.push( normal.x, normal.y, normal.z );
 
-		}
+			// uv
 
-		vertices.push( verticesRow );
+			uvs.push( u, 1 - v );
 
-	}
-
-	var indices = [];
-
-	for ( var y = 0; y < heightSegments; y ++ ) {
-
-		for ( var x = 0; x < widthSegments; x ++ ) {
-
-			var v1 = vertices[ y ][ x + 1 ];
-			var v2 = vertices[ y ][ x ];
-			var v3 = vertices[ y + 1 ][ x ];
-			var v4 = vertices[ y + 1 ][ x + 1 ];
-
-			if ( y !== 0 || thetaStart > 0 ) indices.push( v1, v2, v4 );
-			if ( y !== heightSegments - 1 || thetaEnd < Math.PI ) indices.push( v2, v3, v4 );
+			verticesRow.push( index ++ );
 
 		}
 
+		grid.push( verticesRow );
+
 	}
 
-	this.setIndex( new ( positions.count > 65535 ? Uint32BufferAttribute : Uint16BufferAttribute )( indices, 1 ) );
-	this.addAttribute( 'position', positions );
-	this.addAttribute( 'normal', normals );
-	this.addAttribute( 'uv', uvs );
+	// indices
 
-	this.boundingSphere = new Sphere( new Vector3(), radius );
+	for ( iy = 0; iy < heightSegments; iy ++ ) {
+
+		for ( ix = 0; ix < widthSegments; ix ++ ) {
+
+			var a = grid[ iy ][ ix + 1 ];
+			var b = grid[ iy ][ ix ];
+			var c = grid[ iy + 1 ][ ix ];
+			var d = grid[ iy + 1 ][ ix + 1 ];
+
+			if ( iy !== 0 || thetaStart > 0 ) indices.push( a, b, d );
+			if ( iy !== heightSegments - 1 || thetaEnd < Math.PI ) indices.push( b, c, d );
+
+		}
+
+	}
+
+	// build geometry
+
+	this.setIndex( indices );
+	this.addAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );
+	this.addAttribute( 'normal', new Float32BufferAttribute( normals, 3 ) );
+	this.addAttribute( 'uv', new Float32BufferAttribute( uvs, 2 ) );
 
 }
 
@@ -27191,18 +27097,16 @@ function RingBufferGeometry( innerRadius, outerRadius, thetaSegments, phiSegment
 	thetaSegments = thetaSegments !== undefined ? Math.max( 3, thetaSegments ) : 8;
 	phiSegments = phiSegments !== undefined ? Math.max( 1, phiSegments ) : 1;
 
-	// these are used to calculate buffer length
-	var vertexCount = ( thetaSegments + 1 ) * ( phiSegments + 1 );
-	var indexCount = thetaSegments * phiSegments * 2 * 3;
-
 	// buffers
-	var indices = new BufferAttribute( new ( indexCount > 65535 ? Uint32Array : Uint16Array )( indexCount ), 1 );
-	var vertices = new BufferAttribute( new Float32Array( vertexCount * 3 ), 3 );
-	var normals = new BufferAttribute( new Float32Array( vertexCount * 3 ), 3 );
-	var uvs = new BufferAttribute( new Float32Array( vertexCount * 2 ), 2 );
+
+	var indices = [];
+	var vertices = [];
+	var normals = [];
+	var uvs = [];
 
 	// some helper variables
-	var index = 0, indexOffset = 0, segment;
+
+	var segment;
 	var radius = innerRadius;
 	var radiusStep = ( ( outerRadius - innerRadius ) / phiSegments );
 	var vertex = new Vector3();
@@ -27211,38 +27115,41 @@ function RingBufferGeometry( innerRadius, outerRadius, thetaSegments, phiSegment
 
 	// generate vertices, normals and uvs
 
-	// values are generate from the inside of the ring to the outside
-
 	for ( j = 0; j <= phiSegments; j ++ ) {
 
 		for ( i = 0; i <= thetaSegments; i ++ ) {
 
+			// values are generate from the inside of the ring to the outside
+
 			segment = thetaStart + i / thetaSegments * thetaLength;
 
 			// vertex
+
 			vertex.x = radius * Math.cos( segment );
 			vertex.y = radius * Math.sin( segment );
-			vertices.setXYZ( index, vertex.x, vertex.y, vertex.z );
+
+			vertices.push( vertex.x, vertex.y, vertex.z );
 
 			// normal
-			normals.setXYZ( index, 0, 0, 1 );
+
+			normals.push( 0, 0, 1 );
 
 			// uv
+
 			uv.x = ( vertex.x / outerRadius + 1 ) / 2;
 			uv.y = ( vertex.y / outerRadius + 1 ) / 2;
-			uvs.setXY( index, uv.x, uv.y );
 
-			// increase index
-			index ++;
+			uvs.push( uv.x, uv.y );
 
 		}
 
 		// increase the radius for next row of vertices
+
 		radius += radiusStep;
 
 	}
 
-	// generate indices
+	// indices
 
 	for ( j = 0; j < phiSegments; j ++ ) {
 
@@ -27252,21 +27159,15 @@ function RingBufferGeometry( innerRadius, outerRadius, thetaSegments, phiSegment
 
 			segment = i + thetaSegmentLevel;
 
-			// indices
 			var a = segment;
 			var b = segment + thetaSegments + 1;
 			var c = segment + thetaSegments + 2;
 			var d = segment + 1;
 
-			// face one
-			indices.setX( indexOffset, a ); indexOffset ++;
-			indices.setX( indexOffset, b ); indexOffset ++;
-			indices.setX( indexOffset, c ); indexOffset ++;
+			// faces
 
-			// face two
-			indices.setX( indexOffset, a ); indexOffset ++;
-			indices.setX( indexOffset, c ); indexOffset ++;
-			indices.setX( indexOffset, d ); indexOffset ++;
+			indices.push( a, b, d );
+			indices.push( b, c, d );
 
 		}
 
@@ -27275,9 +27176,9 @@ function RingBufferGeometry( innerRadius, outerRadius, thetaSegments, phiSegment
 	// build geometry
 
 	this.setIndex( indices );
-	this.addAttribute( 'position', vertices );
-	this.addAttribute( 'normal', normals );
-	this.addAttribute( 'uv', uvs );
+	this.addAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );
+	this.addAttribute( 'normal', new Float32BufferAttribute( normals, 3 ) );
+	this.addAttribute( 'uv', new Float32BufferAttribute( uvs, 2 ) );
 
 }
 
@@ -27340,19 +27241,19 @@ function LatheBufferGeometry( points, segments, phiStart, phiLength ) {
 	phiLength = phiLength || Math.PI * 2;
 
 	// clamp phiLength so it's in range of [ 0, 2PI ]
+
 	phiLength = _Math.clamp( phiLength, 0, Math.PI * 2 );
 
-	// these are used to calculate buffer length
-	var vertexCount = ( segments + 1 ) * points.length;
-	var indexCount = segments * points.length * 2 * 3;
 
 	// buffers
-	var indices = new BufferAttribute( new ( indexCount > 65535 ? Uint32Array : Uint16Array )( indexCount ) , 1 );
-	var vertices = new BufferAttribute( new Float32Array( vertexCount * 3 ), 3 );
-	var uvs = new BufferAttribute( new Float32Array( vertexCount * 2 ), 2 );
+
+	var indices = [];
+	var vertices = [];
+	var uvs = [];
 
 	// helper variables
-	var index = 0, indexOffset = 0, base;
+
+	var base;
 	var inverseSegments = 1.0 / segments;
 	var vertex = new Vector3();
 	var uv = new Vector2();
@@ -27370,24 +27271,26 @@ function LatheBufferGeometry( points, segments, phiStart, phiLength ) {
 		for ( j = 0; j <= ( points.length - 1 ); j ++ ) {
 
 			// vertex
+
 			vertex.x = points[ j ].x * sin;
 			vertex.y = points[ j ].y;
 			vertex.z = points[ j ].x * cos;
-			vertices.setXYZ( index, vertex.x, vertex.y, vertex.z );
+
+			vertices.push( vertex.x, vertex.y, vertex.z );
 
 			// uv
+
 			uv.x = i / segments;
 			uv.y = j / ( points.length - 1 );
-			uvs.setXY( index, uv.x, uv.y );
 
-			// increase index
-			index ++;
+			uvs.push( uv.x, uv.y );
+
 
 		}
 
 	}
 
-	// generate indices
+	// indices
 
 	for ( i = 0; i < segments; i ++ ) {
 
@@ -27395,21 +27298,15 @@ function LatheBufferGeometry( points, segments, phiStart, phiLength ) {
 
 			base = j + i * points.length;
 
-			// indices
 			var a = base;
 			var b = base + points.length;
 			var c = base + points.length + 1;
 			var d = base + 1;
 
-			// face one
-			indices.setX( indexOffset, a ); indexOffset ++;
-			indices.setX( indexOffset, b ); indexOffset ++;
-			indices.setX( indexOffset, d ); indexOffset ++;
+			// faces
 
-			// face two
-			indices.setX( indexOffset, b ); indexOffset ++;
-			indices.setX( indexOffset, c ); indexOffset ++;
-			indices.setX( indexOffset, d ); indexOffset ++;
+			indices.push( a, b, d );
+			indices.push( b, c, d );
 
 		}
 
@@ -27418,8 +27315,8 @@ function LatheBufferGeometry( points, segments, phiStart, phiLength ) {
 	// build geometry
 
 	this.setIndex( indices );
-	this.addAttribute( 'position', vertices );
-	this.addAttribute( 'uv', uvs );
+	this.addAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );
+	this.addAttribute( 'uv', new Float32BufferAttribute( uvs, 2 ) );
 
 	// generate normals
 
@@ -27436,29 +27333,34 @@ function LatheBufferGeometry( points, segments, phiStart, phiLength ) {
 		var n = new Vector3();
 
 		// this is the buffer offset for the last line of vertices
+
 		base = segments * points.length * 3;
 
 		for ( i = 0, j = 0; i < points.length; i ++, j += 3 ) {
 
 			// select the normal of the vertex in the first line
+
 			n1.x = normals[ j + 0 ];
 			n1.y = normals[ j + 1 ];
 			n1.z = normals[ j + 2 ];
 
 			// select the normal of the vertex in the last line
+
 			n2.x = normals[ base + j + 0 ];
 			n2.y = normals[ base + j + 1 ];
 			n2.z = normals[ base + j + 2 ];
 
 			// average normals
+
 			n.addVectors( n1, n2 ).normalize();
 
 			// assign the new values to both normals
+
 			normals[ j + 0 ] = normals[ base + j + 0 ] = n.x;
 			normals[ j + 1 ] = normals[ base + j + 1 ] = n.y;
 			normals[ j + 2 ] = normals[ base + j + 2 ] = n.z;
 
-		} // next row
+		}
 
 	}
 
@@ -27515,10 +27417,14 @@ function ShapeBufferGeometry( shapes, curveSegments ) {
 
 	curveSegments = curveSegments || 12;
 
+	// buffers
+
+	var indices = [];
 	var vertices = [];
 	var normals = [];
 	var uvs = [];
-	var indices = [];
+
+	// helper variables
 
 	var groupStart = 0;
 	var groupCount = 0;
@@ -27546,7 +27452,7 @@ function ShapeBufferGeometry( shapes, curveSegments ) {
 
 	// build geometry
 
-	this.setIndex( new ( indices.length > 65535 ? Uint32BufferAttribute : Uint16BufferAttribute )( indices, 1 ) );
+	this.setIndex( indices );
 	this.addAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );
 	this.addAttribute( 'normal', new Float32BufferAttribute( normals, 3 ) );
 	this.addAttribute( 'uv', new Float32BufferAttribute( uvs, 2 ) );
@@ -27633,25 +27539,32 @@ ShapeBufferGeometry.prototype.constructor = ShapeBufferGeometry;
 
 /**
  * @author WestLangley / http://github.com/WestLangley
+ * @author Mugen87 / https://github.com/Mugen87
  */
 
 function EdgesGeometry( geometry, thresholdAngle ) {
 
 	BufferGeometry.call( this );
 
+	this.type = 'EdgesGeometry';
+
+	this.parameters = {
+		thresholdAngle: thresholdAngle
+	};
+
 	thresholdAngle = ( thresholdAngle !== undefined ) ? thresholdAngle : 1;
 
+	// buffer
+
+	var vertices = [];
+
+	// helper variables
+
 	var thresholdDot = Math.cos( _Math.DEG2RAD * thresholdAngle );
+	var edge = [ 0, 0 ], edges = {};
+	var key, keys = [ 'a', 'b', 'c' ];
 
-	var edge = [ 0, 0 ], hash = {};
-
-	function sortFunction( a, b ) {
-
-		return a - b;
-
-	}
-
-	var keys = [ 'a', 'b', 'c' ];
+	// prepare source geometry
 
 	var geometry2;
 
@@ -27669,8 +27582,10 @@ function EdgesGeometry( geometry, thresholdAngle ) {
 	geometry2.mergeVertices();
 	geometry2.computeFaceNormals();
 
-	var vertices = geometry2.vertices;
+	var sourceVertices = geometry2.vertices;
 	var faces = geometry2.faces;
+
+	// now create a data structure where each entry represents an edge with its adjoining faces
 
 	for ( var i = 0, l = faces.length; i < l; i ++ ) {
 
@@ -27682,15 +27597,15 @@ function EdgesGeometry( geometry, thresholdAngle ) {
 			edge[ 1 ] = face[ keys[ ( j + 1 ) % 3 ] ];
 			edge.sort( sortFunction );
 
-			var key = edge.toString();
+			key = edge.toString();
 
-			if ( hash[ key ] === undefined ) {
+			if ( edges[ key ] === undefined ) {
 
-				hash[ key ] = { vert1: edge[ 0 ], vert2: edge[ 1 ], face1: i, face2: undefined };
+				edges[ key ] = { index1: edge[ 0 ], index2: edge[ 1 ], face1: i, face2: undefined };
 
 			} else {
 
-				hash[ key ].face2 = i;
+				edges[ key ].face2 = i;
 
 			}
 
@@ -27698,31 +27613,37 @@ function EdgesGeometry( geometry, thresholdAngle ) {
 
 	}
 
-	var coords = [];
+	// generate vertices
 
-	for ( var key in hash ) {
+	for ( key in edges ) {
 
-		var h = hash[ key ];
+		var e = edges[ key ];
 
-		// An edge is only rendered if the angle (in degrees) between the face normals of the adjoining faces exceeds this value. default = 1 degree.
+		// an edge is only rendered if the angle (in degrees) between the face normals of the adjoining faces exceeds this value. default = 1 degree.
 
-		if ( h.face2 === undefined || faces[ h.face1 ].normal.dot( faces[ h.face2 ].normal ) <= thresholdDot ) {
+		if ( e.face2 === undefined || faces[ e.face1 ].normal.dot( faces[ e.face2 ].normal ) <= thresholdDot ) {
 
-			var vertex = vertices[ h.vert1 ];
-			coords.push( vertex.x );
-			coords.push( vertex.y );
-			coords.push( vertex.z );
+			var vertex = sourceVertices[ e.index1 ];
+			vertices.push( vertex.x, vertex.y, vertex.z );
 
-			vertex = vertices[ h.vert2 ];
-			coords.push( vertex.x );
-			coords.push( vertex.y );
-			coords.push( vertex.z );
+			vertex = sourceVertices[ e.index2 ];
+			vertices.push( vertex.x, vertex.y, vertex.z );
 
 		}
 
 	}
 
-	this.addAttribute( 'position', new Float32BufferAttribute( coords, 3 ) );
+	// build geometry
+
+	this.addAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );
+
+	// custom array sort function
+
+	function sortFunction( a, b ) {
+
+		return a - b;
+
+	}
 
 }
 
@@ -27792,35 +27713,19 @@ function CylinderBufferGeometry( radiusTop, radiusBottom, height, radialSegments
 	thetaStart = thetaStart !== undefined ? thetaStart : 0.0;
 	thetaLength = thetaLength !== undefined ? thetaLength : 2.0 * Math.PI;
 
-	// used to calculate buffer length
-
-	var nbCap = 0;
-
-	if ( openEnded === false ) {
-
-		if ( radiusTop > 0 ) nbCap ++;
-		if ( radiusBottom > 0 ) nbCap ++;
-
-	}
-
-	var vertexCount = calculateVertexCount();
-	var indexCount = calculateIndexCount();
-
 	// buffers
 
-	var indices = new BufferAttribute( new ( indexCount > 65535 ? Uint32Array : Uint16Array )( indexCount ), 1 );
-	var vertices = new BufferAttribute( new Float32Array( vertexCount * 3 ), 3 );
-	var normals = new BufferAttribute( new Float32Array( vertexCount * 3 ), 3 );
-	var uvs = new BufferAttribute( new Float32Array( vertexCount * 2 ), 2 );
+	var indices = [];
+	var vertices = [];
+	var normals = [];
+	var uvs = [];
 
 	// helper variables
 
-	var index = 0,
-	    indexOffset = 0,
-	    indexArray = [],
-	    halfHeight = height / 2;
-
-	// group variables
+	var index = 0;
+	var indexOffset = 0;
+	var indexArray = [];
+	var halfHeight = height / 2;
 	var groupStart = 0;
 
 	// generate geometry
@@ -27837,39 +27742,9 @@ function CylinderBufferGeometry( radiusTop, radiusBottom, height, radialSegments
 	// build geometry
 
 	this.setIndex( indices );
-	this.addAttribute( 'position', vertices );
-	this.addAttribute( 'normal', normals );
-	this.addAttribute( 'uv', uvs );
-
-	// helper functions
-
-	function calculateVertexCount() {
-
-		var count = ( radialSegments + 1 ) * ( heightSegments + 1 );
-
-		if ( openEnded === false ) {
-
-			count += ( ( radialSegments + 1 ) * nbCap ) + ( radialSegments * nbCap );
-
-		}
-
-		return count;
-
-	}
-
-	function calculateIndexCount() {
-
-		var count = radialSegments * heightSegments * 2 * 3;
-
-		if ( openEnded === false ) {
-
-			count += radialSegments * nbCap * 3;
-
-		}
-
-		return count;
-
-	}
+	this.addAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );
+	this.addAttribute( 'normal', new Float32BufferAttribute( normals, 3 ) );
+	this.addAttribute( 'uv', new Float32BufferAttribute( uvs, 2 ) );
 
 	function generateTorso() {
 
@@ -27891,6 +27766,7 @@ function CylinderBufferGeometry( radiusTop, radiusBottom, height, radialSegments
 			var v = y / heightSegments;
 
 			// calculate the radius of the current row
+
 			var radius = v * ( radiusBottom - radiusTop ) + radiusTop;
 
 			for ( x = 0; x <= radialSegments; x ++ ) {
@@ -27903,27 +27779,29 @@ function CylinderBufferGeometry( radiusTop, radiusBottom, height, radialSegments
 				var cosTheta = Math.cos( theta );
 
 				// vertex
+
 				vertex.x = radius * sinTheta;
 				vertex.y = - v * height + halfHeight;
 				vertex.z = radius * cosTheta;
-				vertices.setXYZ( index, vertex.x, vertex.y, vertex.z );
+				vertices.push( vertex.x, vertex.y, vertex.z );
 
 				// normal
+
 				normal.set( sinTheta, slope, cosTheta ).normalize();
-				normals.setXYZ( index, normal.x, normal.y, normal.z );
+				normals.push( normal.x, normal.y, normal.z );
 
 				// uv
-				uvs.setXY( index, u, 1 - v );
+
+				uvs.push( u, 1 - v );
 
 				// save index of vertex in respective row
-				indexRow.push( index );
 
-				// increase index
-				index ++;
+				indexRow.push( index ++ );
 
 			}
 
 			// now save vertices of the row in our index array
+
 			indexArray.push( indexRow );
 
 		}
@@ -27935,22 +27813,19 @@ function CylinderBufferGeometry( radiusTop, radiusBottom, height, radialSegments
 			for ( y = 0; y < heightSegments; y ++ ) {
 
 				// we use the index array to access the correct indices
-				var i1 = indexArray[ y ][ x ];
-				var i2 = indexArray[ y + 1 ][ x ];
-				var i3 = indexArray[ y + 1 ][ x + 1 ];
-				var i4 = indexArray[ y ][ x + 1 ];
 
-				// face one
-				indices.setX( indexOffset, i1 ); indexOffset ++;
-				indices.setX( indexOffset, i2 ); indexOffset ++;
-				indices.setX( indexOffset, i4 ); indexOffset ++;
+				var a = indexArray[ y ][ x ];
+				var b = indexArray[ y + 1 ][ x ];
+				var c = indexArray[ y + 1 ][ x + 1 ];
+				var d = indexArray[ y ][ x + 1 ];
 
-				// face two
-				indices.setX( indexOffset, i2 ); indexOffset ++;
-				indices.setX( indexOffset, i3 ); indexOffset ++;
-				indices.setX( indexOffset, i4 ); indexOffset ++;
+				// faces
 
-				// update counters
+				indices.push( a, b, d );
+				indices.push( b, c, d );
+
+				// update group counter
+
 				groupCount += 6;
 
 			}
@@ -27958,9 +27833,11 @@ function CylinderBufferGeometry( radiusTop, radiusBottom, height, radialSegments
 		}
 
 		// add a group to the geometry. this will ensure multi material support
+
 		scope.addGroup( groupStart, groupCount, 0 );
 
 		// calculate new start value for groups
+
 		groupStart += groupCount;
 
 	}
@@ -27987,23 +27864,25 @@ function CylinderBufferGeometry( radiusTop, radiusBottom, height, radialSegments
 		for ( x = 1; x <= radialSegments; x ++ ) {
 
 			// vertex
-			vertices.setXYZ( index, 0, halfHeight * sign, 0 );
+
+			vertices.push( 0, halfHeight * sign, 0 );
 
 			// normal
-			normals.setXYZ( index, 0, sign, 0 );
+
+			normals.push( 0, sign, 0 );
 
 			// uv
-			uv.x = 0.5;
-			uv.y = 0.5;
 
-			uvs.setXY( index, uv.x, uv.y );
+			uvs.push( 0.5, 0.5 );
 
 			// increase index
+
 			index ++;
 
 		}
 
 		// save the index of the last center vertex
+
 		centerIndexEnd = index;
 
 		// now we generate the surrounding vertices, normals and uvs
@@ -28017,20 +27896,24 @@ function CylinderBufferGeometry( radiusTop, radiusBottom, height, radialSegments
 			var sinTheta = Math.sin( theta );
 
 			// vertex
+
 			vertex.x = radius * sinTheta;
 			vertex.y = halfHeight * sign;
 			vertex.z = radius * cosTheta;
-			vertices.setXYZ( index, vertex.x, vertex.y, vertex.z );
+			vertices.push( vertex.x, vertex.y, vertex.z );
 
 			// normal
-			normals.setXYZ( index, 0, sign, 0 );
+
+			normals.push( 0, sign, 0 );
 
 			// uv
+
 			uv.x = ( cosTheta * 0.5 ) + 0.5;
 			uv.y = ( sinTheta * 0.5 * sign ) + 0.5;
-			uvs.setXY( index, uv.x, uv.y );
+			uvs.push( uv.x, uv.y );
 
 			// increase index
+
 			index ++;
 
 		}
@@ -28045,28 +27928,27 @@ function CylinderBufferGeometry( radiusTop, radiusBottom, height, radialSegments
 			if ( top === true ) {
 
 				// face top
-				indices.setX( indexOffset, i ); indexOffset ++;
-				indices.setX( indexOffset, i + 1 ); indexOffset ++;
-				indices.setX( indexOffset, c ); indexOffset ++;
+
+				indices.push( i, i + 1, c );
 
 			} else {
 
 				// face bottom
-				indices.setX( indexOffset, i + 1 ); indexOffset ++;
-				indices.setX( indexOffset, i ); indexOffset ++;
-				indices.setX( indexOffset, c ); indexOffset ++;
+
+				indices.push( i + 1, i, c );
 
 			}
 
-			// update counters
 			groupCount += 3;
 
 		}
 
 		// add a group to the geometry. this will ensure multi material support
+
 		scope.addGroup( groupStart, groupCount, top === true ? 1 : 2 );
 
 		// calculate new start value for groups
+
 		groupStart += groupCount;
 
 	}
@@ -28152,6 +28034,7 @@ CircleGeometry.prototype.constructor = CircleGeometry;
 
 /**
  * @author benaadams / https://twitter.com/ben_a_adams
+ * @author Mugen87 / https://github.com/Mugen87
  */
 
 function CircleBufferGeometry( radius, segments, thetaStart, thetaLength ) {
@@ -28173,45 +28056,63 @@ function CircleBufferGeometry( radius, segments, thetaStart, thetaLength ) {
 	thetaStart = thetaStart !== undefined ? thetaStart : 0;
 	thetaLength = thetaLength !== undefined ? thetaLength : Math.PI * 2;
 
-	var vertices = segments + 2;
+	// buffers
 
-	var positions = new Float32Array( vertices * 3 );
-	var normals = new Float32Array( vertices * 3 );
-	var uvs = new Float32Array( vertices * 2 );
+	var indices = [];
+	var vertices = [];
+	var normals = [];
+	var uvs = [];
 
-	// center data is already zero, but need to set a few extras
-	normals[ 2 ] = 1.0;
-	uvs[ 0 ] = 0.5;
-	uvs[ 1 ] = 0.5;
+	// helper variables
 
-	for ( var s = 0, i = 3, ii = 2 ; s <= segments; s ++, i += 3, ii += 2 ) {
+	var i, s;
+	var vertex = new Vector3();
+	var uv = new Vector2();
+
+	// center point
+
+	vertices.push( 0, 0, 0 );
+	normals.push( 0, 0, 1 );
+	uvs.push( 0.5, 0.5 );
+
+	for ( s = 0, i = 3; s <= segments; s ++, i += 3 ) {
 
 		var segment = thetaStart + s / segments * thetaLength;
 
-		positions[ i ] = radius * Math.cos( segment );
-		positions[ i + 1 ] = radius * Math.sin( segment );
+		// vertex
 
-		normals[ i + 2 ] = 1; // normal z
+		vertex.x = radius * Math.cos( segment );
+		vertex.y = radius * Math.sin( segment );
 
-		uvs[ ii ] = ( positions[ i ] / radius + 1 ) / 2;
-		uvs[ ii + 1 ] = ( positions[ i + 1 ] / radius + 1 ) / 2;
+		vertices.push( vertex.x, vertex.y, vertex.z );
+
+		// normal
+
+		normals.push( 0, 0, 1 );
+
+		// uvs
+
+		uv.x = ( vertices[ i ] / radius + 1 ) / 2;
+		uv.y = ( vertices[ i + 1 ] / radius + 1 ) / 2;
+
+		uvs.push( uv.x, uv.y );
 
 	}
 
-	var indices = [];
+	// indices
 
-	for ( var i = 1; i <= segments; i ++ ) {
+	for ( i = 1; i <= segments; i ++ ) {
 
 		indices.push( i, i + 1, 0 );
 
 	}
 
-	this.setIndex( new BufferAttribute( new Uint16Array( indices ), 1 ) );
-	this.addAttribute( 'position', new BufferAttribute( positions, 3 ) );
-	this.addAttribute( 'normal', new BufferAttribute( normals, 3 ) );
-	this.addAttribute( 'uv', new BufferAttribute( uvs, 2 ) );
+	// build geometry
 
-	this.boundingSphere = new Sphere( new Vector3(), radius );
+	this.setIndex( indices );
+	this.addAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );
+	this.addAttribute( 'normal', new Float32BufferAttribute( normals, 3 ) );
+	this.addAttribute( 'uv', new Float32BufferAttribute( uvs, 2 ) );
 
 }
 
@@ -28335,9 +28236,7 @@ function MultiMaterial( materials ) {
 
 }
 
-MultiMaterial.prototype = {
-
-	constructor: MultiMaterial,
+Object.assign( MultiMaterial.prototype, {
 
 	isMultiMaterial: true,
 
@@ -28387,7 +28286,7 @@ MultiMaterial.prototype = {
 
 	}
 
-};
+} );
 
 /**
  * @author WestLangley / http://github.com/WestLangley
@@ -30432,8 +30331,7 @@ var AnimationUtils = {
  * @author tschw
  */
 
-function Interpolant(
-		parameterPositions, sampleValues, sampleSize, resultBuffer ) {
+function Interpolant( parameterPositions, sampleValues, sampleSize, resultBuffer ) {
 
 	this.parameterPositions = parameterPositions;
 	this._cachedIndex = 0;
@@ -30445,9 +30343,7 @@ function Interpolant(
 
 }
 
-Interpolant.prototype = {
-
-	constructor: Interpolant,
+Object.assign( Interpolant.prototype, {
 
 	evaluate: function( t ) {
 
@@ -30464,10 +30360,10 @@ Interpolant.prototype = {
 				var right;
 
 				linear_scan: {
-//- See http://jsperf.com/comparison-to-undefined/3
-//- slower code:
-//-
-//- 				if ( t >= t1 || t1 === undefined ) {
+					//- See http://jsperf.com/comparison-to-undefined/3
+					//- slower code:
+					//-
+					//- 				if ( t >= t1 || t1 === undefined ) {
 					forward_scan: if ( ! ( t < t1 ) ) {
 
 						for ( var giveUpAt = i1 + 2; ;) {
@@ -30504,8 +30400,8 @@ Interpolant.prototype = {
 
 					}
 
-//- slower code:
-//-					if ( t < t0 || t0 === undefined ) {
+					//- slower code:
+					//-					if ( t < t0 || t0 === undefined ) {
 					if ( ! ( t >= t0 ) ) {
 
 						// looping?
@@ -30656,15 +30552,16 @@ Interpolant.prototype = {
 
 	}
 
-};
+} );
 
+//!\ DECLARE ALIAS AFTER assign prototype !
 Object.assign( Interpolant.prototype, {
 
-	beforeStart_: //( 0, t, t0 ), returns this.resultBuffer
-		Interpolant.prototype.copySampleValue_,
+	//( 0, t, t0 ), returns this.resultBuffer
+	beforeStart_: Interpolant.prototype.copySampleValue_,
 
-	afterEnd_: //( N-1, tN-1, t ), returns this.resultBuffer
-		Interpolant.prototype.copySampleValue_
+	//( N-1, tN-1, t ), returns this.resultBuffer
+	afterEnd_: Interpolant.prototype.copySampleValue_,
 
 } );
 
@@ -30678,8 +30575,7 @@ Object.assign( Interpolant.prototype, {
  * @author tschw
  */
 
-function CubicInterpolant(
-		parameterPositions, sampleValues, sampleSize, resultBuffer ) {
+function CubicInterpolant( parameterPositions, sampleValues, sampleSize, resultBuffer ) {
 
 	Interpolant.call(
 			this, parameterPositions, sampleValues, sampleSize, resultBuffer );
@@ -30691,8 +30587,7 @@ function CubicInterpolant(
 
 }
 
-CubicInterpolant.prototype =
-		Object.assign( Object.create( Interpolant.prototype ), {
+CubicInterpolant.prototype = Object.assign( Object.create( Interpolant.prototype ), {
 
 	constructor: CubicInterpolant,
 
@@ -30825,16 +30720,13 @@ CubicInterpolant.prototype =
  * @author tschw
  */
 
-function LinearInterpolant(
-		parameterPositions, sampleValues, sampleSize, resultBuffer ) {
+function LinearInterpolant( parameterPositions, sampleValues, sampleSize, resultBuffer ) {
 
-	Interpolant.call(
-			this, parameterPositions, sampleValues, sampleSize, resultBuffer );
+	Interpolant.call( this, parameterPositions, sampleValues, sampleSize, resultBuffer );
 
 }
 
-LinearInterpolant.prototype =
-		Object.assign( Object.create( Interpolant.prototype ), {
+LinearInterpolant.prototype = Object.assign( Object.create( Interpolant.prototype ), {
 
 	constructor: LinearInterpolant,
 
@@ -30872,16 +30764,13 @@ LinearInterpolant.prototype =
  * @author tschw
  */
 
-function DiscreteInterpolant(
-		parameterPositions, sampleValues, sampleSize, resultBuffer ) {
+function DiscreteInterpolant( parameterPositions, sampleValues, sampleSize, resultBuffer ) {
 
-	Interpolant.call(
-			this, parameterPositions, sampleValues, sampleSize, resultBuffer );
+	Interpolant.call( this, parameterPositions, sampleValues, sampleSize, resultBuffer );
 
 }
 
-DiscreteInterpolant.prototype =
-		Object.assign( Object.create( Interpolant.prototype ), {
+DiscreteInterpolant.prototype = Object.assign( Object.create( Interpolant.prototype ), {
 
 	constructor: DiscreteInterpolant,
 
@@ -31306,16 +31195,13 @@ VectorKeyframeTrack.prototype =
  * @author tschw
  */
 
-function QuaternionLinearInterpolant(
-		parameterPositions, sampleValues, sampleSize, resultBuffer ) {
+function QuaternionLinearInterpolant( parameterPositions, sampleValues, sampleSize, resultBuffer ) {
 
-	Interpolant.call(
-			this, parameterPositions, sampleValues, sampleSize, resultBuffer );
+	Interpolant.call( this, parameterPositions, sampleValues, sampleSize, resultBuffer );
 
 }
 
-QuaternionLinearInterpolant.prototype =
-		Object.assign( Object.create( Interpolant.prototype ), {
+QuaternionLinearInterpolant.prototype = Object.assign( Object.create( Interpolant.prototype ), {
 
 	constructor: QuaternionLinearInterpolant,
 
@@ -31678,55 +31564,6 @@ function AnimationClip( name, duration, tracks ) {
 
 }
 
-AnimationClip.prototype = {
-
-	constructor: AnimationClip,
-
-	resetDuration: function() {
-
-		var tracks = this.tracks,
-			duration = 0;
-
-		for ( var i = 0, n = tracks.length; i !== n; ++ i ) {
-
-			var track = this.tracks[ i ];
-
-			duration = Math.max( duration, track.times[ track.times.length - 1 ] );
-
-		}
-
-		this.duration = duration;
-
-	},
-
-	trim: function() {
-
-		for ( var i = 0; i < this.tracks.length; i ++ ) {
-
-			this.tracks[ i ].trim( 0, this.duration );
-
-		}
-
-		return this;
-
-	},
-
-	optimize: function() {
-
-		for ( var i = 0; i < this.tracks.length; i ++ ) {
-
-			this.tracks[ i ].optimize();
-
-		}
-
-		return this;
-
-	}
-
-};
-
-// Static methods:
-
 Object.assign( AnimationClip, {
 
 	parse: function( json ) {
@@ -31744,8 +31581,7 @@ Object.assign( AnimationClip, {
 		return new AnimationClip( json.name, json.duration, tracks );
 
 	},
-
-
+	
 	toJSON: function( clip ) {
 
 		var tracks = [],
@@ -31768,8 +31604,7 @@ Object.assign( AnimationClip, {
 		return json;
 
 	},
-
-
+	
 	CreateFromMorphTargetSequence: function( name, morphTargetSequence, fps, noLoop ) {
 
 		var numMorphTargets = morphTargetSequence.length;
@@ -32000,6 +31835,51 @@ Object.assign( AnimationClip, {
 		var clip = new AnimationClip( clipName, duration, tracks );
 
 		return clip;
+
+	}
+
+} );
+
+Object.assign( AnimationClip.prototype, {
+
+	resetDuration: function() {
+
+		var tracks = this.tracks,
+			duration = 0;
+
+		for ( var i = 0, n = tracks.length; i !== n; ++ i ) {
+
+			var track = this.tracks[ i ];
+
+			duration = Math.max( duration, track.times[ track.times.length - 1 ] );
+
+		}
+
+		this.duration = duration;
+
+	},
+
+	trim: function() {
+
+		for ( var i = 0; i < this.tracks.length; i ++ ) {
+
+			this.tracks[ i ].trim( 0, this.duration );
+
+		}
+
+		return this;
+
+	},
+
+	optimize: function() {
+
+		for ( var i = 0; i < this.tracks.length; i ++ ) {
+
+			this.tracks[ i ].optimize();
+
+		}
+
+		return this;
 
 	}
 
@@ -32273,9 +32153,40 @@ function Loader() {
 
 }
 
-Loader.prototype = {
+Loader.Handlers = {
 
-	constructor: Loader,
+	handlers: [],
+
+	add: function ( regex, loader ) {
+
+		this.handlers.push( regex, loader );
+
+	},
+
+	get: function ( file ) {
+
+		var handlers = this.handlers;
+
+		for ( var i = 0, l = handlers.length; i < l; i += 2 ) {
+
+			var regex = handlers[ i ];
+			var loader = handlers[ i + 1 ];
+
+			if ( regex.test( file ) ) {
+
+				return loader;
+
+			}
+
+		}
+
+		return null;
+
+	}
+
+};
+
+Object.assign( Loader.prototype, {
 
 	crossOrigin: undefined,
 
@@ -32316,13 +32227,11 @@ Loader.prototype = {
 			CustomBlending: CustomBlending
 		};
 
-		var color, textureLoader, materialLoader;
+		var color = new Color();
+		var textureLoader = new TextureLoader();
+		var materialLoader = new MaterialLoader();
 
 		return function createMaterial( m, texturePath, crossOrigin ) {
-
-			if ( color === undefined ) color = new Color();
-			if ( textureLoader === undefined ) textureLoader = new TextureLoader();
-			if ( materialLoader === undefined ) materialLoader = new MaterialLoader();
 
 			// convert from old material format
 
@@ -32561,40 +32470,7 @@ Loader.prototype = {
 
 	} )()
 
-};
-
-Loader.Handlers = {
-
-	handlers: [],
-
-	add: function ( regex, loader ) {
-
-		this.handlers.push( regex, loader );
-
-	},
-
-	get: function ( file ) {
-
-		var handlers = this.handlers;
-
-		for ( var i = 0, l = handlers.length; i < l; i += 2 ) {
-
-			var regex = handlers[ i ];
-			var loader = handlers[ i + 1 ];
-
-			if ( regex.test( file ) ) {
-
-				return loader;
-
-			}
-
-		}
-
-		return null;
-
-	}
-
-};
+} );
 
 /**
  * @author mrdoob / http://mrdoob.com/
@@ -33169,7 +33045,10 @@ Object.assign( ObjectLoader.prototype, {
 
 			} catch ( error ) {
 
+				if ( onError !== undefined ) onError( error );
+
 				console.error( 'THREE:ObjectLoader: Can\'t parse ' + url + '.', error.message );
+
 				return;
 
 			}
@@ -33529,7 +33408,6 @@ Object.assign( ObjectLoader.prototype, {
             video.id = "video";
             video.width = 10;
             video.height = 10;
-            video.muted = true;
             video.setAttribute("loop","");
             video.setAttribute("style","display:none");
             video.setAttribute('crossorigin', 'anonymous');
@@ -34041,9 +33919,7 @@ function CubicBezier( t, p0, p1, p2, p3 ) {
 
 function Curve() {}
 
-Curve.prototype = {
-
-	constructor: Curve,
+Object.assign( Curve.prototype, {
 
 	// Virtual base class method to overwrite and implement in subclasses
 	//	- t [0 .. 1]
@@ -34384,7 +34260,7 @@ Curve.prototype = {
 
 	}
 
-};
+} );
 
 function LineCurve( v1, v2 ) {
 
@@ -35032,7 +34908,7 @@ function ShapePath() {
 
 }
 
-ShapePath.prototype = {
+Object.assign( ShapePath.prototype, {
 
 	moveTo: function ( x, y ) {
 
@@ -35293,7 +35169,7 @@ ShapePath.prototype = {
 
 	}
 
-};
+} );
 
 /**
  * @author zz85 / http://www.lab4games.net/zz85/blog
@@ -35765,6 +35641,7 @@ function CubeCamera( near, far, cubeResolution ) {
 	var options = { format: RGBFormat, magFilter: LinearFilter, minFilter: LinearFilter };
 
 	this.renderTarget = new WebGLRenderTargetCube( cubeResolution, cubeResolution, options );
+	this.renderTarget.texture.name = "CubeCamera";
 
 	this.updateCubeMap = function ( renderer, scene ) {
 
@@ -36062,7 +35939,8 @@ Audio.prototype = Object.assign( Object.create( Object3D.prototype ), {
 	},
 
 	seek: function (value, play) {
-        this.stop();
+        if(this.isPlaying === true)
+                this.stop();
         this.startTime = value;
         if(play){
             this.play();
@@ -36228,8 +36106,7 @@ Audio.prototype = Object.assign( Object.create( Object3D.prototype ), {
 		return this.gain.gain.value;
 
 	},
-
-
+	
 	setVolume: function ( value ) {
 
 		this.gain.gain.value = value;
@@ -36427,9 +36304,7 @@ function PropertyMixer( binding, typeName, valueSize ) {
 
 }
 
-PropertyMixer.prototype = {
-
-	constructor: PropertyMixer,
+Object.assign( PropertyMixer.prototype, {
 
 	// accumulate data in the 'incoming' region into 'accu<i>'
 	accumulate: function( accuIndex, weight ) {
@@ -36489,7 +36364,7 @@ PropertyMixer.prototype = {
 			var originalValueOffset = stride * 3;
 
 			this._mixBufferRegion(
-					buffer, offset, originalValueOffset, 1 - weight, stride );
+				buffer, offset, originalValueOffset, 1 - weight, stride );
 
 		}
 
@@ -36559,7 +36434,7 @@ PropertyMixer.prototype = {
 	_slerp: function( buffer, dstOffset, srcOffset, t, stride ) {
 
 		Quaternion.slerpFlat( buffer, dstOffset,
-				buffer, dstOffset, buffer, srcOffset, t );
+			buffer, dstOffset, buffer, srcOffset, t );
 
 	},
 
@@ -36577,7 +36452,7 @@ PropertyMixer.prototype = {
 
 	}
 
-};
+} );
 
 /**
  *
@@ -36589,275 +36464,225 @@ PropertyMixer.prototype = {
  * @author tschw
  */
 
-function PropertyBinding( rootNode, path, parsedPath ) {
+function Composite ( targetGroup, path, optionalParsedPath ) {
 
-	this.path = path;
-	this.parsedPath = parsedPath ||
-			PropertyBinding.parseTrackName( path );
+	var parsedPath = optionalParsedPath || PropertyBinding.parseTrackName( path );
 
-	this.node = PropertyBinding.findNode(
-			rootNode, this.parsedPath.nodeName ) || rootNode;
-
-	this.rootNode = rootNode;
+	this._targetGroup = targetGroup;
+	this._bindings = targetGroup.subscribe_( path, parsedPath );
 
 }
 
-PropertyBinding.prototype = {
+Object.assign( Composite.prototype, {
 
-	constructor: PropertyBinding,
+	getValue: function( array, offset ) {
 
-	getValue: function getValue_unbound( targetArray, offset ) {
+		this.bind(); // bind all binding
 
-		this.bind();
-		this.getValue( targetArray, offset );
+		var firstValidIndex = this._targetGroup.nCachedObjects_,
+			binding = this._bindings[ firstValidIndex ];
 
-		// Note: This class uses a State pattern on a per-method basis:
-		// 'bind' sets 'this.getValue' / 'setValue' and shadows the
-		// prototype version of these methods with one that represents
-		// the bound state. When the property is not found, the methods
-		// become no-ops.
+		// and only call .getValue on the first
+		if ( binding !== undefined ) binding.getValue( array, offset );
 
 	},
 
-	setValue: function getValue_unbound( sourceArray, offset ) {
+	setValue: function( array, offset ) {
 
-		this.bind();
-		this.setValue( sourceArray, offset );
+		var bindings = this._bindings;
+
+		for ( var i = this._targetGroup.nCachedObjects_,
+				  n = bindings.length; i !== n; ++ i ) {
+
+			bindings[ i ].setValue( array, offset );
+
+		}
 
 	},
 
-	// create getter / setter pair for a property in the scene graph
 	bind: function() {
 
-		var targetObject = this.node,
-			parsedPath = this.parsedPath,
+		var bindings = this._bindings;
 
-			objectName = parsedPath.objectName,
-			propertyName = parsedPath.propertyName,
-			propertyIndex = parsedPath.propertyIndex;
+		for ( var i = this._targetGroup.nCachedObjects_,
+				  n = bindings.length; i !== n; ++ i ) {
 
-		if ( ! targetObject ) {
-
-			targetObject = PropertyBinding.findNode(
-					this.rootNode, parsedPath.nodeName ) || this.rootNode;
-
-			this.node = targetObject;
+			bindings[ i ].bind();
 
 		}
-
-		// set fail state so we can just 'return' on error
-		this.getValue = this._getValue_unavailable;
-		this.setValue = this._setValue_unavailable;
-
- 		// ensure there is a value node
-		if ( ! targetObject ) {
-
-			console.error( "  trying to update node for track: " + this.path + " but it wasn't found." );
-			return;
-
-		}
-
-		if ( objectName ) {
-
-			var objectIndex = parsedPath.objectIndex;
-
-			// special cases were we need to reach deeper into the hierarchy to get the face materials....
-			switch ( objectName ) {
-
-				case 'materials':
-
-					if ( ! targetObject.material ) {
-
-						console.error( '  can not bind to material as node does not have a material', this );
-						return;
-
-					}
-
-					if ( ! targetObject.material.materials ) {
-
-						console.error( '  can not bind to material.materials as node.material does not have a materials array', this );
-						return;
-
-					}
-
-					targetObject = targetObject.material.materials;
-
-					break;
-
-				case 'bones':
-
-					if ( ! targetObject.skeleton ) {
-
-						console.error( '  can not bind to bones as node does not have a skeleton', this );
-						return;
-
-					}
-
-					// potential future optimization: skip this if propertyIndex is already an integer
-					// and convert the integer string to a true integer.
-
-					targetObject = targetObject.skeleton.bones;
-
-					// support resolving morphTarget names into indices.
-					for ( var i = 0; i < targetObject.length; i ++ ) {
-
-						if ( targetObject[ i ].name === objectIndex ) {
-
-							objectIndex = i;
-							break;
-
-						}
-
-					}
-
-					break;
-
-				default:
-
-					if ( targetObject[ objectName ] === undefined ) {
-
-						console.error( '  can not bind to objectName of node, undefined', this );
-						return;
-
-					}
-
-					targetObject = targetObject[ objectName ];
-
-			}
-
-
-			if ( objectIndex !== undefined ) {
-
-				if ( targetObject[ objectIndex ] === undefined ) {
-
-					console.error( "  trying to bind to objectIndex of objectName, but is undefined:", this, targetObject );
-					return;
-
-				}
-
-				targetObject = targetObject[ objectIndex ];
-
-			}
-
-		}
-
-		// resolve property
-		var nodeProperty = targetObject[ propertyName ];
-
-		if ( nodeProperty === undefined ) {
-
-			var nodeName = parsedPath.nodeName;
-
-			console.error( "  trying to update property for track: " + nodeName +
-					'.' + propertyName + " but it wasn't found.", targetObject );
-			return;
-
-		}
-
-		// determine versioning scheme
-		var versioning = this.Versioning.None;
-
-		if ( targetObject.needsUpdate !== undefined ) { // material
-
-			versioning = this.Versioning.NeedsUpdate;
-			this.targetObject = targetObject;
-
-		} else if ( targetObject.matrixWorldNeedsUpdate !== undefined ) { // node transform
-
-			versioning = this.Versioning.MatrixWorldNeedsUpdate;
-			this.targetObject = targetObject;
-
-		}
-
-		// determine how the property gets bound
-		var bindingType = this.BindingType.Direct;
-
-		if ( propertyIndex !== undefined ) {
-			// access a sub element of the property array (only primitives are supported right now)
-
-			if ( propertyName === "morphTargetInfluences" ) {
-				// potential optimization, skip this if propertyIndex is already an integer, and convert the integer string to a true integer.
-
-				// support resolving morphTarget names into indices.
-				if ( ! targetObject.geometry ) {
-
-					console.error( '  can not bind to morphTargetInfluences becasuse node does not have a geometry', this );
-					return;
-
-				}
-
-				if ( ! targetObject.geometry.morphTargets ) {
-
-					console.error( '  can not bind to morphTargetInfluences becasuse node does not have a geometry.morphTargets', this );
-					return;
-
-				}
-
-				for ( var i = 0; i < this.node.geometry.morphTargets.length; i ++ ) {
-
-					if ( targetObject.geometry.morphTargets[ i ].name === propertyIndex ) {
-
-						propertyIndex = i;
-						break;
-
-					}
-
-				}
-
-			}
-
-			bindingType = this.BindingType.ArrayElement;
-
-			this.resolvedProperty = nodeProperty;
-			this.propertyIndex = propertyIndex;
-
-		} else if ( nodeProperty.fromArray !== undefined && nodeProperty.toArray !== undefined ) {
-			// must use copy for Object3D.Euler/Quaternion
-
-			bindingType = this.BindingType.HasFromToArray;
-
-			this.resolvedProperty = nodeProperty;
-
-		} else if ( nodeProperty.length !== undefined ) {
-
-			bindingType = this.BindingType.EntireArray;
-
-			this.resolvedProperty = nodeProperty;
-
-		} else {
-
-			this.propertyName = propertyName;
-
-		}
-
-		// select getter / setter
-		this.getValue = this.GetterByBindingType[ bindingType ];
-		this.setValue = this.SetterByBindingTypeAndVersioning[ bindingType ][ versioning ];
 
 	},
 
 	unbind: function() {
 
-		this.node = null;
+		var bindings = this._bindings;
 
-		// back to the prototype version of getValue / setValue
-		// note: avoiding to mutate the shape of 'this' via 'delete'
-		this.getValue = this._getValue_unbound;
-		this.setValue = this._setValue_unbound;
+		for ( var i = this._targetGroup.nCachedObjects_,
+				  n = bindings.length; i !== n; ++ i ) {
+
+			bindings[ i ].unbind();
+
+		}
 
 	}
 
-};
+} );
+
+
+function PropertyBinding( rootNode, path, parsedPath ) {
+
+	this.path = path;
+	this.parsedPath = parsedPath || PropertyBinding.parseTrackName( path );
+
+	this.node = PropertyBinding.findNode( rootNode, this.parsedPath.nodeName ) || rootNode;
+
+	this.rootNode = rootNode;
+
+}
+
+Object.assign( PropertyBinding, {
+
+	Composite: Composite,
+
+	create: function( root, path, parsedPath ) {
+
+		if ( ! ( root && root.isAnimationObjectGroup ) ) {
+
+			return new PropertyBinding( root, path, parsedPath );
+
+		} else {
+
+			return new PropertyBinding.Composite( root, path, parsedPath );
+
+		}
+
+	},
+
+	parseTrackName: function( trackName ) {
+
+		// matches strings in the form of:
+		//    nodeName.property
+		//    nodeName.property[accessor]
+		//    nodeName.material.property[accessor]
+		//    uuid.property[accessor]
+		//    uuid.objectName[objectIndex].propertyName[propertyIndex]
+		//    parentName/nodeName.property
+		//    parentName/parentName/nodeName.property[index]
+		//    .bone[Armature.DEF_cog].position
+		//    scene:helium_balloon_model:helium_balloon_model.position
+		// created and tested via https://regex101.com/#javascript
+
+		var re = /^((?:[\w-]+[\/:])*)([\w-]+)?(?:\.([\w-]+)(?:\[(.+)\])?)?\.([\w-]+)(?:\[(.+)\])?$/;
+		var matches = re.exec( trackName );
+
+		if ( ! matches ) {
+
+			throw new Error( "cannot parse trackName at all: " + trackName );
+
+		}
+
+		var results = {
+			// directoryName: matches[ 1 ], // (tschw) currently unused
+			nodeName: matches[ 2 ], 	// allowed to be null, specified root node.
+			objectName: matches[ 3 ],
+			objectIndex: matches[ 4 ],
+			propertyName: matches[ 5 ],
+			propertyIndex: matches[ 6 ]	// allowed to be null, specifies that the whole property is set.
+		};
+
+		if ( results.propertyName === null || results.propertyName.length === 0 ) {
+
+			throw new Error( "can not parse propertyName from trackName: " + trackName );
+
+		}
+
+		return results;
+
+	},
+
+	findNode: function( root, nodeName ) {
+
+		if ( ! nodeName || nodeName === "" || nodeName === "root" || nodeName === "." || nodeName === -1 || nodeName === root.name || nodeName === root.uuid ) {
+
+			return root;
+
+		}
+
+		// search into skeleton bones.
+		if ( root.skeleton ) {
+
+			var searchSkeleton = function( skeleton ) {
+
+				for( var i = 0; i < skeleton.bones.length; i ++ ) {
+
+					var bone = skeleton.bones[ i ];
+
+					if ( bone.name === nodeName ) {
+
+						return bone;
+
+					}
+				}
+
+				return null;
+
+			};
+
+			var bone = searchSkeleton( root.skeleton );
+
+			if ( bone ) {
+
+				return bone;
+
+			}
+		}
+
+		// search into node subtree.
+		if ( root.children ) {
+
+			var searchNodeSubtree = function( children ) {
+
+				for( var i = 0; i < children.length; i ++ ) {
+
+					var childNode = children[ i ];
+
+					if ( childNode.name === nodeName || childNode.uuid === nodeName ) {
+
+						return childNode;
+
+					}
+
+					var result = searchNodeSubtree( childNode.children );
+
+					if ( result ) return result;
+
+				}
+
+				return null;
+
+			};
+
+			var subTreeNode = searchNodeSubtree( root.children );
+
+			if ( subTreeNode ) {
+
+				return subTreeNode;
+
+			}
+
+		}
+
+		return null;
+
+	}
+
+} );
 
 Object.assign( PropertyBinding.prototype, { // prototype, continued
 
 	// these are used to "bind" a nonexistent property
 	_getValue_unavailable: function() {},
 	_setValue_unavailable: function() {},
-
-	// initial state of these methods that calls 'bind'
-	_getValue_unbound: PropertyBinding.prototype.getValue,
-	_setValue_unbound: PropertyBinding.prototype.setValue,
 
 	BindingType: {
 		Direct: 0,
@@ -37025,209 +36850,259 @@ Object.assign( PropertyBinding.prototype, { // prototype, continued
 
 		]
 
-	]
+	],
 
-} );
+	getValue: function getValue_unbound( targetArray, offset ) {
 
-PropertyBinding.Composite =
-		function( targetGroup, path, optionalParsedPath ) {
+		this.bind();
+		this.getValue( targetArray, offset );
 
-	var parsedPath = optionalParsedPath ||
-			PropertyBinding.parseTrackName( path );
-
-	this._targetGroup = targetGroup;
-	this._bindings = targetGroup.subscribe_( path, parsedPath );
-
-};
-
-PropertyBinding.Composite.prototype = {
-
-	constructor: PropertyBinding.Composite,
-
-	getValue: function( array, offset ) {
-
-		this.bind(); // bind all binding
-
-		var firstValidIndex = this._targetGroup.nCachedObjects_,
-			binding = this._bindings[ firstValidIndex ];
-
-		// and only call .getValue on the first
-		if ( binding !== undefined ) binding.getValue( array, offset );
+		// Note: This class uses a State pattern on a per-method basis:
+		// 'bind' sets 'this.getValue' / 'setValue' and shadows the
+		// prototype version of these methods with one that represents
+		// the bound state. When the property is not found, the methods
+		// become no-ops.
 
 	},
 
-	setValue: function( array, offset ) {
+	setValue: function getValue_unbound( sourceArray, offset ) {
 
-		var bindings = this._bindings;
-
-		for ( var i = this._targetGroup.nCachedObjects_,
-				n = bindings.length; i !== n; ++ i ) {
-
-			bindings[ i ].setValue( array, offset );
-
-		}
+		this.bind();
+		this.setValue( sourceArray, offset );
 
 	},
 
+	// create getter / setter pair for a property in the scene graph
 	bind: function() {
 
-		var bindings = this._bindings;
+		var targetObject = this.node,
+			parsedPath = this.parsedPath,
 
-		for ( var i = this._targetGroup.nCachedObjects_,
-				n = bindings.length; i !== n; ++ i ) {
+			objectName = parsedPath.objectName,
+			propertyName = parsedPath.propertyName,
+			propertyIndex = parsedPath.propertyIndex;
 
-			bindings[ i ].bind();
+		if ( ! targetObject ) {
+
+			targetObject = PropertyBinding.findNode(
+					this.rootNode, parsedPath.nodeName ) || this.rootNode;
+
+			this.node = targetObject;
 
 		}
+
+		// set fail state so we can just 'return' on error
+		this.getValue = this._getValue_unavailable;
+		this.setValue = this._setValue_unavailable;
+
+		// ensure there is a value node
+		if ( ! targetObject ) {
+
+			console.error( "  trying to update node for track: " + this.path + " but it wasn't found." );
+			return;
+
+		}
+
+		if ( objectName ) {
+
+			var objectIndex = parsedPath.objectIndex;
+
+			// special cases were we need to reach deeper into the hierarchy to get the face materials....
+			switch ( objectName ) {
+
+				case 'materials':
+
+					if ( ! targetObject.material ) {
+
+						console.error( '  can not bind to material as node does not have a material', this );
+						return;
+
+					}
+
+					if ( ! targetObject.material.materials ) {
+
+						console.error( '  can not bind to material.materials as node.material does not have a materials array', this );
+						return;
+
+					}
+
+					targetObject = targetObject.material.materials;
+
+					break;
+
+				case 'bones':
+
+					if ( ! targetObject.skeleton ) {
+
+						console.error( '  can not bind to bones as node does not have a skeleton', this );
+						return;
+
+					}
+
+					// potential future optimization: skip this if propertyIndex is already an integer
+					// and convert the integer string to a true integer.
+
+					targetObject = targetObject.skeleton.bones;
+
+					// support resolving morphTarget names into indices.
+					for ( var i = 0; i < targetObject.length; i ++ ) {
+
+						if ( targetObject[ i ].name === objectIndex ) {
+
+							objectIndex = i;
+							break;
+
+						}
+
+					}
+
+					break;
+
+				default:
+
+					if ( targetObject[ objectName ] === undefined ) {
+
+						console.error( '  can not bind to objectName of node, undefined', this );
+						return;
+
+					}
+
+					targetObject = targetObject[ objectName ];
+
+			}
+
+
+			if ( objectIndex !== undefined ) {
+
+				if ( targetObject[ objectIndex ] === undefined ) {
+
+					console.error( "  trying to bind to objectIndex of objectName, but is undefined:", this, targetObject );
+					return;
+
+				}
+
+				targetObject = targetObject[ objectIndex ];
+
+			}
+
+		}
+
+		// resolve property
+		var nodeProperty = targetObject[ propertyName ];
+
+		if ( nodeProperty === undefined ) {
+
+			var nodeName = parsedPath.nodeName;
+
+			console.error( "  trying to update property for track: " + nodeName +
+				'.' + propertyName + " but it wasn't found.", targetObject );
+			return;
+
+		}
+
+		// determine versioning scheme
+		var versioning = this.Versioning.None;
+
+		if ( targetObject.needsUpdate !== undefined ) { // material
+
+			versioning = this.Versioning.NeedsUpdate;
+			this.targetObject = targetObject;
+
+		} else if ( targetObject.matrixWorldNeedsUpdate !== undefined ) { // node transform
+
+			versioning = this.Versioning.MatrixWorldNeedsUpdate;
+			this.targetObject = targetObject;
+
+		}
+
+		// determine how the property gets bound
+		var bindingType = this.BindingType.Direct;
+
+		if ( propertyIndex !== undefined ) {
+			// access a sub element of the property array (only primitives are supported right now)
+
+			if ( propertyName === "morphTargetInfluences" ) {
+				// potential optimization, skip this if propertyIndex is already an integer, and convert the integer string to a true integer.
+
+				// support resolving morphTarget names into indices.
+				if ( ! targetObject.geometry ) {
+
+					console.error( '  can not bind to morphTargetInfluences becasuse node does not have a geometry', this );
+					return;
+
+				}
+
+				if ( ! targetObject.geometry.morphTargets ) {
+
+					console.error( '  can not bind to morphTargetInfluences becasuse node does not have a geometry.morphTargets', this );
+					return;
+
+				}
+
+				for ( var i = 0; i < this.node.geometry.morphTargets.length; i ++ ) {
+
+					if ( targetObject.geometry.morphTargets[ i ].name === propertyIndex ) {
+
+						propertyIndex = i;
+						break;
+
+					}
+
+				}
+
+			}
+
+			bindingType = this.BindingType.ArrayElement;
+
+			this.resolvedProperty = nodeProperty;
+			this.propertyIndex = propertyIndex;
+
+		} else if ( nodeProperty.fromArray !== undefined && nodeProperty.toArray !== undefined ) {
+			// must use copy for Object3D.Euler/Quaternion
+
+			bindingType = this.BindingType.HasFromToArray;
+
+			this.resolvedProperty = nodeProperty;
+
+		} else if ( Array.isArray( nodeProperty ) ) {
+      
+			bindingType = this.BindingType.EntireArray;
+
+			this.resolvedProperty = nodeProperty;
+
+		} else {
+
+			this.propertyName = propertyName;
+
+		}
+
+		// select getter / setter
+		this.getValue = this.GetterByBindingType[ bindingType ];
+		this.setValue = this.SetterByBindingTypeAndVersioning[ bindingType ][ versioning ];
 
 	},
 
 	unbind: function() {
 
-		var bindings = this._bindings;
+		this.node = null;
 
-		for ( var i = this._targetGroup.nCachedObjects_,
-				n = bindings.length; i !== n; ++ i ) {
-
-			bindings[ i ].unbind();
-
-		}
+		// back to the prototype version of getValue / setValue
+		// note: avoiding to mutate the shape of 'this' via 'delete'
+		this.getValue = this._getValue_unbound;
+		this.setValue = this._setValue_unbound;
 
 	}
 
-};
+} );
 
-PropertyBinding.create = function( root, path, parsedPath ) {
+//!\ DECLARE ALIAS AFTER assign prototype !
+Object.assign( PropertyBinding.prototype, {
 
-	if ( ! ( root && root.isAnimationObjectGroup ) ) {
+	// initial state of these methods that calls 'bind'
+	_getValue_unbound: PropertyBinding.prototype.getValue,
+	_setValue_unbound: PropertyBinding.prototype.setValue,
 
-		return new PropertyBinding( root, path, parsedPath );
-
-	} else {
-
-		return new PropertyBinding.Composite( root, path, parsedPath );
-
-	}
-
-};
-
-PropertyBinding.parseTrackName = function( trackName ) {
-
-	// matches strings in the form of:
-	//    nodeName.property
-	//    nodeName.property[accessor]
-	//    nodeName.material.property[accessor]
-	//    uuid.property[accessor]
-	//    uuid.objectName[objectIndex].propertyName[propertyIndex]
-	//    parentName/nodeName.property
-	//    parentName/parentName/nodeName.property[index]
-	//    .bone[Armature.DEF_cog].position
-	//    scene:helium_balloon_model:helium_balloon_model.position
-	// created and tested via https://regex101.com/#javascript
-
-	var re = /^((?:[\w-]+[\/:])*)([\w-]+)?(?:\.([\w-]+)(?:\[(.+)\])?)?\.([\w-]+)(?:\[(.+)\])?$/;
-	var matches = re.exec( trackName );
-
-	if ( ! matches ) {
-
-		throw new Error( "cannot parse trackName at all: " + trackName );
-
-	}
-
-	var results = {
-		// directoryName: matches[ 1 ], // (tschw) currently unused
-		nodeName: matches[ 2 ], 	// allowed to be null, specified root node.
-		objectName: matches[ 3 ],
-		objectIndex: matches[ 4 ],
-		propertyName: matches[ 5 ],
-		propertyIndex: matches[ 6 ]	// allowed to be null, specifies that the whole property is set.
-	};
-
-	if ( results.propertyName === null || results.propertyName.length === 0 ) {
-
-		throw new Error( "can not parse propertyName from trackName: " + trackName );
-
-	}
-
-	return results;
-
-};
-
-PropertyBinding.findNode = function( root, nodeName ) {
-
-	if ( ! nodeName || nodeName === "" || nodeName === "root" || nodeName === "." || nodeName === -1 || nodeName === root.name || nodeName === root.uuid ) {
-
-		return root;
-
-	}
-
-	// search into skeleton bones.
-	if ( root.skeleton ) {
-
-		var searchSkeleton = function( skeleton ) {
-
-			for( var i = 0; i < skeleton.bones.length; i ++ ) {
-
-				var bone = skeleton.bones[ i ];
-
-				if ( bone.name === nodeName ) {
-
-					return bone;
-
-				}
-			}
-
-			return null;
-
-		};
-
-		var bone = searchSkeleton( root.skeleton );
-
-		if ( bone ) {
-
-			return bone;
-
-		}
-	}
-
-	// search into node subtree.
-	if ( root.children ) {
-
-		var searchNodeSubtree = function( children ) {
-
-			for( var i = 0; i < children.length; i ++ ) {
-
-				var childNode = children[ i ];
-
-				if ( childNode.name === nodeName || childNode.uuid === nodeName ) {
-
-					return childNode;
-
-				}
-
-				var result = searchNodeSubtree( childNode.children );
-
-				if ( result ) return result;
-
-			}
-
-			return null;
-
-		};
-
-		var subTreeNode = searchNodeSubtree( root.children );
-
-		if ( subTreeNode ) {
-
-			return subTreeNode;
-
-		}
-
-	}
-
-	return null;
-
-};
+} );
 
 /**
  *
@@ -37299,9 +37174,7 @@ function AnimationObjectGroup( var_args ) {
 
 }
 
-AnimationObjectGroup.prototype = {
-
-	constructor: AnimationObjectGroup,
+Object.assign( AnimationObjectGroup.prototype, {
 
 	isAnimationObjectGroup: true,
 
@@ -37599,7 +37472,7 @@ AnimationObjectGroup.prototype = {
 
 	}
 
-};
+} );
 
 /**
  *
@@ -37677,9 +37550,7 @@ function AnimationAction( mixer, clip, localRoot ) {
 
 }
 
-AnimationAction.prototype = {
-
-	constructor: AnimationAction,
+Object.assign( AnimationAction.prototype, {
 
 	// State & Scheduling
 
@@ -38252,7 +38123,7 @@ AnimationAction.prototype = {
 
 	}
 
-};
+} );
 
 /**
  *
@@ -38276,259 +38147,7 @@ function AnimationMixer( root ) {
 
 }
 
-AnimationMixer.prototype = {
-
-	constructor: AnimationMixer,
-
-	// return an action for a clip optionally using a custom root target
-	// object (this method allocates a lot of dynamic memory in case a
-	// previously unknown clip/root combination is specified)
-	clipAction: function ( clip, optionalRoot ) {
-
-		var root = optionalRoot || this._root,
-			rootUuid = root.uuid,
-
-			clipObject = typeof clip === 'string' ?
-					AnimationClip.findByName( root, clip ) : clip,
-
-			clipUuid = clipObject !== null ? clipObject.uuid : clip,
-
-			actionsForClip = this._actionsByClip[ clipUuid ],
-			prototypeAction = null;
-
-		if ( actionsForClip !== undefined ) {
-
-			var existingAction =
-					actionsForClip.actionByRoot[ rootUuid ];
-
-			if ( existingAction !== undefined ) {
-
-				return existingAction;
-
-			}
-
-			// we know the clip, so we don't have to parse all
-			// the bindings again but can just copy
-			prototypeAction = actionsForClip.knownActions[ 0 ];
-
-			// also, take the clip from the prototype action
-			if ( clipObject === null )
-				clipObject = prototypeAction._clip;
-
-		}
-
-		// clip must be known when specified via string
-		if ( clipObject === null ) return null;
-
-		// allocate all resources required to run it
-		var newAction = new AnimationAction( this, clipObject, optionalRoot );
-
-		this._bindAction( newAction, prototypeAction );
-
-		// and make the action known to the memory manager
-		this._addInactiveAction( newAction, clipUuid, rootUuid );
-
-		return newAction;
-
-	},
-
-	// get an existing action
-	existingAction: function ( clip, optionalRoot ) {
-
-		var root = optionalRoot || this._root,
-			rootUuid = root.uuid,
-
-			clipObject = typeof clip === 'string' ?
-					AnimationClip.findByName( root, clip ) : clip,
-
-			clipUuid = clipObject ? clipObject.uuid : clip,
-
-			actionsForClip = this._actionsByClip[ clipUuid ];
-
-		if ( actionsForClip !== undefined ) {
-
-			return actionsForClip.actionByRoot[ rootUuid ] || null;
-
-		}
-
-		return null;
-
-	},
-
-	// deactivates all previously scheduled actions
-	stopAllAction: function () {
-
-		var actions = this._actions,
-			nActions = this._nActiveActions,
-			bindings = this._bindings,
-			nBindings = this._nActiveBindings;
-
-		this._nActiveActions = 0;
-		this._nActiveBindings = 0;
-
-		for ( var i = 0; i !== nActions; ++ i ) {
-
-			actions[ i ].reset();
-
-		}
-
-		for ( var i = 0; i !== nBindings; ++ i ) {
-
-			bindings[ i ].useCount = 0;
-
-		}
-
-		return this;
-
-	},
-
-	// advance the time and update apply the animation
-	update: function ( deltaTime ) {
-
-		deltaTime *= this.timeScale;
-
-		var actions = this._actions,
-			nActions = this._nActiveActions,
-
-			time = this.time += deltaTime,
-			timeDirection = Math.sign( deltaTime ),
-
-			accuIndex = this._accuIndex ^= 1;
-
-		// run active actions
-
-		for ( var i = 0; i !== nActions; ++ i ) {
-
-			var action = actions[ i ];
-
-			if ( action.enabled ) {
-
-				action._update( time, deltaTime, timeDirection, accuIndex );
-
-			}
-
-		}
-
-		// update scene graph
-
-		var bindings = this._bindings,
-			nBindings = this._nActiveBindings;
-
-		for ( var i = 0; i !== nBindings; ++ i ) {
-
-			bindings[ i ].apply( accuIndex );
-
-		}
-
-		return this;
-
-	},
-
-	// return this mixer's root target object
-	getRoot: function () {
-
-		return this._root;
-
-	},
-
-	// free all resources specific to a particular clip
-	uncacheClip: function ( clip ) {
-
-		var actions = this._actions,
-			clipUuid = clip.uuid,
-			actionsByClip = this._actionsByClip,
-			actionsForClip = actionsByClip[ clipUuid ];
-
-		if ( actionsForClip !== undefined ) {
-
-			// note: just calling _removeInactiveAction would mess up the
-			// iteration state and also require updating the state we can
-			// just throw away
-
-			var actionsToRemove = actionsForClip.knownActions;
-
-			for ( var i = 0, n = actionsToRemove.length; i !== n; ++ i ) {
-
-				var action = actionsToRemove[ i ];
-
-				this._deactivateAction( action );
-
-				var cacheIndex = action._cacheIndex,
-					lastInactiveAction = actions[ actions.length - 1 ];
-
-				action._cacheIndex = null;
-				action._byClipCacheIndex = null;
-
-				lastInactiveAction._cacheIndex = cacheIndex;
-				actions[ cacheIndex ] = lastInactiveAction;
-				actions.pop();
-
-				this._removeInactiveBindingsForAction( action );
-
-			}
-
-			delete actionsByClip[ clipUuid ];
-
-		}
-
-	},
-
-	// free all resources specific to a particular root target object
-	uncacheRoot: function ( root ) {
-
-		var rootUuid = root.uuid,
-			actionsByClip = this._actionsByClip;
-
-		for ( var clipUuid in actionsByClip ) {
-
-			var actionByRoot = actionsByClip[ clipUuid ].actionByRoot,
-				action = actionByRoot[ rootUuid ];
-
-			if ( action !== undefined ) {
-
-				this._deactivateAction( action );
-				this._removeInactiveAction( action );
-
-			}
-
-		}
-
-		var bindingsByRoot = this._bindingsByRootAndName,
-			bindingByName = bindingsByRoot[ rootUuid ];
-
-		if ( bindingByName !== undefined ) {
-
-			for ( var trackName in bindingByName ) {
-
-				var binding = bindingByName[ trackName ];
-				binding.restoreOriginalState();
-				this._removeInactiveBinding( binding );
-
-			}
-
-		}
-
-	},
-
-	// remove a targeted clip from the cache
-	uncacheAction: function ( clip, optionalRoot ) {
-
-		var action = this.existingAction( clip, optionalRoot );
-
-		if ( action !== null ) {
-
-			this._deactivateAction( action );
-			this._removeInactiveAction( action );
-
-		}
-
-	}
-
-};
-
-// Implementation details:
-
-Object.assign( AnimationMixer.prototype, {
+Object.assign( AnimationMixer.prototype, EventDispatcher.prototype, {
 
 	_bindAction: function ( action, prototypeAction ) {
 
@@ -38581,8 +38200,8 @@ Object.assign( AnimationMixer.prototype, {
 						_propertyBindings[ i ].binding.parsedPath;
 
 				binding = new PropertyMixer(
-						PropertyBinding.create( root, trackName, path ),
-						track.ValueTypeName, track.getValueSize() );
+					PropertyBinding.create( root, trackName, path ),
+					track.ValueTypeName, track.getValueSize() );
 
 				++ binding.referenceCount;
 				this._addInactiveBinding( binding, rootUuid, trackName );
@@ -38611,7 +38230,7 @@ Object.assign( AnimationMixer.prototype, {
 					actionsForClip = this._actionsByClip[ clipUuid ];
 
 				this._bindAction( action,
-						actionsForClip && actionsForClip.knownActions[ 0 ] );
+					actionsForClip && actionsForClip.knownActions[ 0 ] );
 
 				this._addInactiveAction( action, clipUuid, rootUuid );
 
@@ -38959,8 +38578,8 @@ Object.assign( AnimationMixer.prototype, {
 		if ( interpolant === undefined ) {
 
 			interpolant = new LinearInterpolant(
-					new Float32Array( 2 ), new Float32Array( 2 ),
-						1, this._controlInterpolantsResultBuffer );
+				new Float32Array( 2 ), new Float32Array( 2 ),
+				1, this._controlInterpolantsResultBuffer );
 
 			interpolant.__cacheIndex = lastActiveIndex;
 			interpolants[ lastActiveIndex ] = interpolant;
@@ -38988,11 +38607,253 @@ Object.assign( AnimationMixer.prototype, {
 
 	},
 
-	_controlInterpolantsResultBuffer: new Float32Array( 1 )
+	_controlInterpolantsResultBuffer: new Float32Array( 1 ),
+
+	// return an action for a clip optionally using a custom root target
+	// object (this method allocates a lot of dynamic memory in case a
+	// previously unknown clip/root combination is specified)
+	clipAction: function ( clip, optionalRoot ) {
+
+		var root = optionalRoot || this._root,
+			rootUuid = root.uuid,
+
+			clipObject = typeof clip === 'string' ?
+				AnimationClip.findByName( root, clip ) : clip,
+
+			clipUuid = clipObject !== null ? clipObject.uuid : clip,
+
+			actionsForClip = this._actionsByClip[ clipUuid ],
+			prototypeAction = null;
+
+		if ( actionsForClip !== undefined ) {
+
+			var existingAction =
+					actionsForClip.actionByRoot[ rootUuid ];
+
+			if ( existingAction !== undefined ) {
+
+				return existingAction;
+
+			}
+
+			// we know the clip, so we don't have to parse all
+			// the bindings again but can just copy
+			prototypeAction = actionsForClip.knownActions[ 0 ];
+
+			// also, take the clip from the prototype action
+			if ( clipObject === null )
+				clipObject = prototypeAction._clip;
+
+		}
+
+		// clip must be known when specified via string
+		if ( clipObject === null ) return null;
+
+		// allocate all resources required to run it
+		var newAction = new AnimationAction( this, clipObject, optionalRoot );
+
+		this._bindAction( newAction, prototypeAction );
+
+		// and make the action known to the memory manager
+		this._addInactiveAction( newAction, clipUuid, rootUuid );
+
+		return newAction;
+
+	},
+
+	// get an existing action
+	existingAction: function ( clip, optionalRoot ) {
+
+		var root = optionalRoot || this._root,
+			rootUuid = root.uuid,
+
+			clipObject = typeof clip === 'string' ?
+				AnimationClip.findByName( root, clip ) : clip,
+
+			clipUuid = clipObject ? clipObject.uuid : clip,
+
+			actionsForClip = this._actionsByClip[ clipUuid ];
+
+		if ( actionsForClip !== undefined ) {
+
+			return actionsForClip.actionByRoot[ rootUuid ] || null;
+
+		}
+
+		return null;
+
+	},
+
+	// deactivates all previously scheduled actions
+	stopAllAction: function () {
+
+		var actions = this._actions,
+			nActions = this._nActiveActions,
+			bindings = this._bindings,
+			nBindings = this._nActiveBindings;
+
+		this._nActiveActions = 0;
+		this._nActiveBindings = 0;
+
+		for ( var i = 0; i !== nActions; ++ i ) {
+
+			actions[ i ].reset();
+
+		}
+
+		for ( var i = 0; i !== nBindings; ++ i ) {
+
+			bindings[ i ].useCount = 0;
+
+		}
+
+		return this;
+
+	},
+
+	// advance the time and update apply the animation
+	update: function ( deltaTime ) {
+
+		deltaTime *= this.timeScale;
+
+		var actions = this._actions,
+			nActions = this._nActiveActions,
+
+			time = this.time += deltaTime,
+			timeDirection = Math.sign( deltaTime ),
+
+			accuIndex = this._accuIndex ^= 1;
+
+		// run active actions
+
+		for ( var i = 0; i !== nActions; ++ i ) {
+
+			var action = actions[ i ];
+
+			if ( action.enabled ) {
+
+				action._update( time, deltaTime, timeDirection, accuIndex );
+
+			}
+
+		}
+
+		// update scene graph
+
+		var bindings = this._bindings,
+			nBindings = this._nActiveBindings;
+
+		for ( var i = 0; i !== nBindings; ++ i ) {
+
+			bindings[ i ].apply( accuIndex );
+
+		}
+
+		return this;
+
+	},
+
+	// return this mixer's root target object
+	getRoot: function () {
+
+		return this._root;
+
+	},
+
+	// free all resources specific to a particular clip
+	uncacheClip: function ( clip ) {
+
+		var actions = this._actions,
+			clipUuid = clip.uuid,
+			actionsByClip = this._actionsByClip,
+			actionsForClip = actionsByClip[ clipUuid ];
+
+		if ( actionsForClip !== undefined ) {
+
+			// note: just calling _removeInactiveAction would mess up the
+			// iteration state and also require updating the state we can
+			// just throw away
+
+			var actionsToRemove = actionsForClip.knownActions;
+
+			for ( var i = 0, n = actionsToRemove.length; i !== n; ++ i ) {
+
+				var action = actionsToRemove[ i ];
+
+				this._deactivateAction( action );
+
+				var cacheIndex = action._cacheIndex,
+					lastInactiveAction = actions[ actions.length - 1 ];
+
+				action._cacheIndex = null;
+				action._byClipCacheIndex = null;
+
+				lastInactiveAction._cacheIndex = cacheIndex;
+				actions[ cacheIndex ] = lastInactiveAction;
+				actions.pop();
+
+				this._removeInactiveBindingsForAction( action );
+
+			}
+
+			delete actionsByClip[ clipUuid ];
+
+		}
+
+	},
+
+	// free all resources specific to a particular root target object
+	uncacheRoot: function ( root ) {
+
+		var rootUuid = root.uuid,
+			actionsByClip = this._actionsByClip;
+
+		for ( var clipUuid in actionsByClip ) {
+
+			var actionByRoot = actionsByClip[ clipUuid ].actionByRoot,
+				action = actionByRoot[ rootUuid ];
+
+			if ( action !== undefined ) {
+
+				this._deactivateAction( action );
+				this._removeInactiveAction( action );
+
+			}
+
+		}
+
+		var bindingsByRoot = this._bindingsByRootAndName,
+			bindingByName = bindingsByRoot[ rootUuid ];
+
+		if ( bindingByName !== undefined ) {
+
+			for ( var trackName in bindingByName ) {
+
+				var binding = bindingByName[ trackName ];
+				binding.restoreOriginalState();
+				this._removeInactiveBinding( binding );
+
+			}
+
+		}
+
+	},
+
+	// remove a targeted clip from the cache
+	uncacheAction: function ( clip, optionalRoot ) {
+
+		var action = this.existingAction( clip, optionalRoot );
+
+		if ( action !== null ) {
+
+			this._deactivateAction( action );
+			this._removeInactiveAction( action );
+
+		}
+
+	}
 
 } );
-
-Object.assign( AnimationMixer.prototype, EventDispatcher.prototype );
 
 /**
  * @author mrdoob / http://mrdoob.com/
@@ -39095,24 +38956,33 @@ function InterleavedBufferAttribute( interleavedBuffer, itemSize, offset, normal
 
 }
 
+Object.defineProperties( InterleavedBufferAttribute.prototype, {
 
-InterleavedBufferAttribute.prototype = {
+	"count" : {
 
-	constructor: InterleavedBufferAttribute,
+		get: function () {
+
+			return this.data.count;
+
+		}
+
+	},
+
+	"array" : {
+
+		get: function () {
+
+			return this.data.array;
+
+		}
+
+	}
+
+} );
+
+Object.assign( InterleavedBufferAttribute.prototype, {
 
 	isInterleavedBufferAttribute: true,
-
-	get count() {
-
-		return this.data.count;
-
-	},
-
-	get array() {
-
-		return this.data.array;
-
-	},
 
 	setX: function ( index, x ) {
 
@@ -39206,7 +39076,7 @@ InterleavedBufferAttribute.prototype = {
 
 	}
 
-};
+} );
 
 /**
  * @author benaadams / https://twitter.com/ben_a_adams
@@ -39229,17 +39099,19 @@ function InterleavedBuffer( array, stride ) {
 
 }
 
-InterleavedBuffer.prototype = {
+Object.defineProperty( InterleavedBuffer.prototype, "needsUpdate", {
 
-	constructor: InterleavedBuffer,
+	set: function(value) { 
+		
+		if ( value === true ) this.version ++; 
+	
+	}
+
+});
+
+Object.assign( InterleavedBuffer.prototype, {
 
 	isInterleavedBuffer: true,
-
-	set needsUpdate( value ) {
-
-		if ( value === true ) this.version ++;
-
-	},
 
 	setArray: function ( array ) {
 
@@ -39312,7 +39184,7 @@ InterleavedBuffer.prototype = {
 
 	}
 
-};
+} );
 
 /**
  * @author benaadams / https://twitter.com/ben_a_adams
@@ -39427,11 +39299,7 @@ function intersectObject( object, raycaster, intersects, recursive ) {
 
 }
 
-//
-
-Raycaster.prototype = {
-
-	constructor: Raycaster,
+Object.assign( Raycaster.prototype, {
 
 	linePrecision: 1,
 
@@ -39498,7 +39366,7 @@ Raycaster.prototype = {
 
 	}
 
-};
+} );
 
 /**
  * @author alteredq / http://alteredqualia.com/
@@ -39516,9 +39384,7 @@ function Clock( autoStart ) {
 
 }
 
-Clock.prototype = {
-
-	constructor: Clock,
+Object.assign( Clock.prototype, {
 
 	start: function () {
 
@@ -39569,7 +39435,7 @@ Clock.prototype = {
 
 	}
 
-};
+} );
 
 /**
  * @author bhouston / http://clara.io
@@ -39591,9 +39457,7 @@ function Spherical( radius, phi, theta ) {
 
 }
 
-Spherical.prototype = {
-
-	constructor: Spherical,
+Object.assign( Spherical.prototype, {
 
 	set: function ( radius, phi, theta ) {
 
@@ -39651,7 +39515,7 @@ Spherical.prototype = {
 
 	}
 
-};
+} );
 
 /**
  * @author Mugen87 / https://github.com/Mugen87
@@ -39670,9 +39534,7 @@ function Cylindrical( radius, theta, y ) {
 
 }
 
-Cylindrical.prototype = {
-
-	constructor: Cylindrical,
+Object.assign( Cylindrical.prototype, {
 
 	set: function ( radius, theta, y ) {
 
@@ -39710,7 +39572,7 @@ Cylindrical.prototype = {
 
 	}
 
-};
+} );
 
 /**
  * @author alteredq / http://alteredqualia.com/
@@ -40654,13 +40516,15 @@ function GridHelper( size, divisions, color1, color2 ) {
 	color2 = new Color( color2 !== undefined ? color2 : 0x888888 );
 
 	var center = divisions / 2;
-	var step = ( size * 2 ) / divisions;
+	var step = size / divisions;
+	var halfSize = size / 2;
+
 	var vertices = [], colors = [];
 
-	for ( var i = 0, j = 0, k = - size; i <= divisions; i ++, k += step ) {
+	for ( var i = 0, j = 0, k = - halfSize; i <= divisions; i ++, k += step ) {
 
-		vertices.push( - size, 0, k, size, 0, k );
-		vertices.push( k, 0, - size, k, 0, size );
+		vertices.push( - halfSize, 0, k, halfSize, 0, k );
+		vertices.push( k, 0, - halfSize, k, 0, halfSize );
 
 		var color = i === center ? color1 : color2;
 
@@ -41262,12 +41126,8 @@ BoxHelper.prototype.update = ( function () {
  *  headWidth - Number
  */
 
-var lineGeometry = new BufferGeometry();
-lineGeometry.addAttribute( 'position', new Float32BufferAttribute( [ 0, 0, 0, 0, 1, 0 ], 3 ) );
-
-var coneGeometry = new CylinderBufferGeometry( 0, 0.5, 1, 5, 1 );
-coneGeometry.translate( 0, - 0.5, 0 );
-
+var lineGeometry;
+var coneGeometry;
 function ArrowHelper( dir, origin, length, color, headLength, headWidth ) {
 
 	// dir is assumed to be normalized
@@ -41278,6 +41138,16 @@ function ArrowHelper( dir, origin, length, color, headLength, headWidth ) {
 	if ( length === undefined ) length = 1;
 	if ( headLength === undefined ) headLength = 0.2 * length;
 	if ( headWidth === undefined ) headWidth = 0.2 * headLength;
+
+	if ( lineGeometry === undefined ) {
+
+		lineGeometry = new BufferGeometry();
+		lineGeometry.addAttribute( 'position', new Float32BufferAttribute( [ 0, 0, 0, 0, 1, 0 ], 3 ) );
+
+		coneGeometry = new CylinderBufferGeometry( 0, 0.5, 1, 5, 1 );
+		coneGeometry.translate( 0, - 0.5, 0 );
+
+	}
 
 	this.position.copy( origin );
 

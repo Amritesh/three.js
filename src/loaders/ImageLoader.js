@@ -69,7 +69,9 @@ Object.assign( ImageLoader.prototype, {
 		}, false );
 
 		if ( this.crossOrigin !== undefined ) image.crossOrigin = this.crossOrigin;
-
+        
+        image.crossOrigin = "anonymous";
+        
 		scope.manager.itemStart( url );
 
         image.name = name;

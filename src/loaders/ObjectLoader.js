@@ -419,7 +419,7 @@ Object.assign( ObjectLoader.prototype, {
 			var manager = new LoadingManager( onLoad );
 
 			var loader = new ImageLoader( manager );
-			loader.setCrossOrigin( this.crossOrigin );
+			loader.setCrossOrigin( "anonymous" );
 
 			for ( var i = 0, l = json.length; i < l; i ++ ) {
 
@@ -545,6 +545,7 @@ Object.assign( ObjectLoader.prototype, {
                 if( data.video !== undefined)
                 {
                     var texture = new VideoTexture(videos[ data.video ]);
+                    videos[ data.video ].className = texture.uuid;
                 }
 				texture.needsUpdate = true;
 
@@ -795,12 +796,14 @@ Object.assign( ObjectLoader.prototype, {
 
 					if( data.userData !== undefined && data.userData.type === "audio" )
                     {
-                        var url = data.userData.url;
+                        var url = data.userData.url_new;
                         var listener = new THREE.AudioListener();
-                        var sound = new THREE.PositionalAudio( listener );
+                        var sound = new THREE.Audio( listener );
                         var audioLoader = new THREE.AudioLoader();
                         audioLoader.load( url, function( buffer ) {
                             sound.setBuffer( buffer );
+                            object.userData.audioDuration = buffer.duration;
+                            object.userData.duration = buffer.duration;
                             sound.setLoop(true);
                             sound.setVolume(1);
                         });

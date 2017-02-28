@@ -18,18 +18,17 @@ Object.assign( TextureLoader.prototype, {
 
 	load: function ( url, onLoad, onProgress, onError, name ) {
 
-		var texture = new Texture();
-
 		var loader = new ImageLoader( this.manager );
 		loader.setCrossOrigin( this.crossOrigin );
 		loader.setPath( this.path );
-		loader.load( name, url, function ( image ) {
+        
+		var texture = new Texture();
+		texture.image = loader.load( name, url, function () {
 
 			// JPEGs can't have an alpha channel, so memory can be saved by storing them as RGB.
 			var isJPEG = url.search( /\.(jpg|jpeg)$/ ) > 0 || url.search( /^data\:image\/jpeg/ ) === 0;
 
 			texture.format = isJPEG ? RGBFormat : RGBAFormat;
-			texture.image = image;
 			texture.needsUpdate = true;
 
 			if ( onLoad !== undefined ) {

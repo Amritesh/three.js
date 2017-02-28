@@ -1,4 +1,3 @@
-import { _Math } from './Math';
 import { Vector3 } from './Vector3';
 
 /**
@@ -16,14 +15,14 @@ import { Vector3 } from './Vector3';
 
 function Matrix4() {
 
-	this.elements = new Float32Array( [
+	this.elements = [
 
 		1, 0, 0, 0,
 		0, 1, 0, 0,
 		0, 0, 1, 0,
 		0, 0, 0, 1
 
-	] );
+	];
 
 	if ( arguments.length > 0 ) {
 
@@ -73,7 +72,10 @@ Object.assign( Matrix4.prototype, {
 
 	copy: function ( m ) {
 
-		this.elements.set( m.elements );
+		var te = this.elements;
+		var me = m.elements;
+
+		for ( var i = 0; i < 16; i ++ ) te[ i ] = me[ i ];
 
 		return this;
 
@@ -81,8 +83,7 @@ Object.assign( Matrix4.prototype, {
 
 	copyPosition: function ( m ) {
 
-		var te = this.elements;
-		var me = m.elements;
+		var te = this.elements, me = m.elements;
 
 		te[ 12 ] = me[ 12 ];
 		te[ 13 ] = me[ 13 ];
@@ -148,7 +149,7 @@ Object.assign( Matrix4.prototype, {
 
 	makeRotationFromEuler: function ( euler ) {
 
-		if ( (euler && euler.isEuler) === false ) {
+		if ( ( euler && euler.isEuler ) === false ) {
 
 			console.error( 'THREE.Matrix: .makeRotationFromEuler() now expects a Euler rotation rather than a Vector3 and order.' );
 
@@ -321,25 +322,30 @@ Object.assign( Matrix4.prototype, {
 
 			var te = this.elements;
 
-			z.subVectors( eye, target ).normalize();
+			z.subVectors( eye, target );
 
 			if ( z.lengthSq() === 0 ) {
+
+				// eye and target are in the same position
 
 				z.z = 1;
 
 			}
 
-			x.crossVectors( up, z ).normalize();
+			z.normalize();
+			x.crossVectors( up, z );
 
 			if ( x.lengthSq() === 0 ) {
 
+				// eye and target are in the same vertical
+
 				z.z += 0.0001;
-				x.crossVectors( up, z ).normalize();
+				x.crossVectors( up, z );
 
 			}
 
+			x.normalize();
 			y.crossVectors( z, x );
-
 
 			te[ 0 ] = x.x; te[ 4 ] = y.x; te[ 8 ] = z.x;
 			te[ 1 ] = x.y; te[ 5 ] = y.y; te[ 9 ] = z.y;
@@ -405,21 +411,6 @@ Object.assign( Matrix4.prototype, {
 		te[ 7 ] = a41 * b12 + a42 * b22 + a43 * b32 + a44 * b42;
 		te[ 11 ] = a41 * b13 + a42 * b23 + a43 * b33 + a44 * b43;
 		te[ 15 ] = a41 * b14 + a42 * b24 + a43 * b34 + a44 * b44;
-
-		return this;
-
-	},
-
-	multiplyToArray: function ( a, b, r ) {
-
-		var te = this.elements;
-
-		this.multiplyMatrices( a, b );
-
-		r[ 0 ] = te[ 0 ]; r[ 1 ] = te[ 1 ]; r[ 2 ] = te[ 2 ]; r[ 3 ] = te[ 3 ];
-		r[ 4 ] = te[ 4 ]; r[ 5 ] = te[ 5 ]; r[ 6 ] = te[ 6 ]; r[ 7 ] = te[ 7 ];
-		r[ 8 ]  = te[ 8 ]; r[ 9 ]  = te[ 9 ]; r[ 10 ] = te[ 10 ]; r[ 11 ] = te[ 11 ];
-		r[ 12 ] = te[ 12 ]; r[ 13 ] = te[ 13 ]; r[ 14 ] = te[ 14 ]; r[ 15 ] = te[ 15 ];
 
 		return this;
 
@@ -784,8 +775,7 @@ Object.assign( Matrix4.prototype, {
 			position.z = te[ 14 ];
 
 			// scale the rotation part
-
-			matrix.elements.set( this.elements ); // at this point matrix is incomplete so we can't use .copy()
+			for ( var i = 0; i < 16; i ++ ) matrix.elements[ i ] = this.elements[ i ]; // at this point matrix is incomplete so we can't use .copy()
 
 			var invSX = 1 / sx;
 			var invSY = 1 / sy;

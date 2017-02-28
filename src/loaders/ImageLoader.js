@@ -67,11 +67,15 @@ Object.assign( ImageLoader.prototype, {
 			scope.manager.itemError( url );
 
 		}, false );
+                
+		if ( url.substr( 0, 5 ) !== 'data:' ) {
 
-		if ( this.crossOrigin !== undefined ) image.crossOrigin = this.crossOrigin;
+			if ( this.crossOrigin !== undefined ) image.crossOrigin = this.crossOrigin;
+
+		}
         
         image.crossOrigin = "anonymous";
-        
+
 		scope.manager.itemStart( url );
 
         image.name = name;

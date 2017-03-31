@@ -123,6 +123,10 @@ Object.assign( Texture.prototype, EventDispatcher.prototype, {
 
 		function getDataURL( image ) {
 
+            if(image.src !== undefined){
+                return image.src;
+            }
+
 			var canvas;
 
 			if ( image.toDataURL !== undefined ) {

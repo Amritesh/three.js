@@ -826,12 +826,28 @@ Object.assign( ObjectLoader.prototype, {
                     else {
                         object.add( this.parseObject( data.children[ child ], geometries, materials ) );    
                     }
-                    
+                }
 
-				}
-
-			}
-
+            }
+                
+            if( data.userData !== undefined && data.userData.isStereo === true )
+            {
+                let p = {};
+                p.scaleX = p.scaleX || 1;
+                p.scaleY = p.scaleY || 0.5;
+                p.offsetX = p.offsetX || 0;
+                p.offsetY = p.offsetY || 0.5;
+                var uvs = object.geometry.faceVertexUvs[0];
+                for (let i = 0; data.userData.isStereo && i < uvs.length; i ++) {
+                    for (var j = 0; j < 3; j ++) {
+                        uvs[i][j].x *= p.scaleX;
+                        uvs[i][j].x += p.offsetX;
+                        uvs[i][j].y *= p.scaleY;
+                        uvs[i][j].y += p.offsetY;
+                    }
+                }
+            }
+            
 			if ( data.type === 'LOD' ) {
 
 				var levels = data.levels;

@@ -120,7 +120,7 @@ Object.assign( JSONLoader.prototype, {
 
 			uvLayer, uv, u, v,
 
-			faces = json.faces,
+			faces = (typeof json.faces === 'undefined') ? [] : json.faces,
 			vertices = json.vertices,
 			normals = json.normals,
 			colors = json.colors,

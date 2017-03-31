@@ -331,7 +331,7 @@ Object.assign( ObjectLoader.prototype, {
 
 					case 'Geometry':
 
-						geometry = geometryLoader.parse( data.data, this.texturePath ).geometry;
+						geometry = geometryLoader.parse( data, this.texturePath ).geometry;
 
 						break;
 
@@ -605,6 +605,28 @@ Object.assign( ObjectLoader.prototype, {
 			function getMaterial( name ) {
 
 				if ( name === undefined ) return undefined;
+
+				if ( Array.isArray( name ) ) {
+
+					var array = [];
+
+					for ( var i = 0, l = name.length; i < l; i ++ ) {
+
+						var uuid = name[ i ];
+
+						if ( materials[ uuid ] === undefined ) {
+
+							console.warn( 'THREE.ObjectLoader: Undefined material', uuid );
+
+						}
+
+						array.push( materials[ uuid ] );
+
+					}
+
+					return array;
+
+				}
 
 				if ( materials[ name ] === undefined ) {
 

@@ -81,6 +81,12 @@ AudioListener.prototype = Object.assign( Object.create( Object3D.prototype ), {
 		this.gain.gain.value = value;
 
 	},
+    
+    getWaveform: function () {
+
+        return this.gain.gain.value;
+
+    },
 
 	updateMatrixWorld: ( function () {
 

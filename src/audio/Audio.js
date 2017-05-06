@@ -12,6 +12,7 @@ function Audio( listener ) {
 	this.type = 'Audio';
 
 	this.context = listener.context;
+    this.analyser = this.context.createAnalyser();
 
 	this.gain = this.context.createGain();
 	this.gain.connect( listener.getInput() );
@@ -55,6 +56,16 @@ Audio.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 		this.buffer = audioBuffer;
 		this.sourceType = 'buffer';
+        
+        var source = this.context.createBufferSource();
+        source.buffer = this.buffer;
+
+        source.connect(this.analyser);
+        let bufferLength = this.analyser.frequencyBinCount;
+        this.dataArray = new Uint8Array(bufferLength);
+
+        this.analyser.getByteTimeDomainData(this.dataArray);
+        source.disconnect(this.analyser);
 
 		if ( this.autoplay ) this.play();
 

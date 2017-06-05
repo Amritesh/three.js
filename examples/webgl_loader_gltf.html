@@ -62,11 +62,11 @@
 
 	<body>
 		<div id="info">
-		<a href="http://threejs.org" target="_blank">three.js</a> -
-		<a href="https://github.com/KhronosGroup/glTF" target="_blank">glTF</a> 1.0 loader
+		<a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> -
+		<a href="https://github.com/KhronosGroup/glTF" target="_blank" rel="noopener">glTF</a> 1.0 loader
 		<br>
-		monster by <a href="http://www.3drt.com/downloads.htm" target="_blank">3drt</a> - COLLADA duck by Sony -
-		Cesium models by <a href="http://cesiumjs.org/" target="_blank">Cesium</a>
+		monster by <a href="http://www.3drt.com/downloads.htm" target="_blank" rel="noopener">3drt</a> - COLLADA duck by Sony -
+		Cesium models by <a href="http://cesiumjs.org/" target="_blank" rel="noopener">Cesium</a>
 		</div>
 	<div id="container"></div>
 	<div id="controls">
@@ -450,7 +450,7 @@
 				var i, len = sceneList.length;
 
 				for (i = 0; i < len; i++) {
-					option = document.createElement("option");
+					var option = document.createElement("option");
 					option.text=sceneList[i].name;
 					elt.add(option);
 				}
@@ -502,14 +502,14 @@
 					elt.removeChild(elt.lastChild);
 				}
 
-				option = document.createElement("option");
+				var option = document.createElement("option");
 				option.text="[default]";
 				elt.add(option);
 
 				var i, len = cameraNames.length;
 
 				for (i = 0; i < len; i++) {
-					option = document.createElement("option");
+					var option = document.createElement("option");
 					option.text=cameraNames[i];
 					elt.add(option);
 				}

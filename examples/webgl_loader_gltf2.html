@@ -62,10 +62,10 @@
 
 	<body>
 		<div id="info">
-		<a href="http://threejs.org" target="_blank">three.js</a> -
-		<a href="https://github.com/KhronosGroup/glTF" target="_blank">glTF</a> 2.0 loader
+		<a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> -
+		<a href="https://github.com/KhronosGroup/glTF" target="_blank" rel="noopener">glTF</a> 2.0 loader
 		<br>
-		BoomBox by <a href="https://www.microsoft.com/" target="_blank">Microsoft</a>
+		BoomBox by <a href="https://www.microsoft.com/" target="_blank" rel="noopener">Microsoft</a>
 		</div>
 	<div id="container"></div>
 	<div id="controls">
@@ -126,7 +126,7 @@
 
 				scene = new THREE.Scene();
 
-				defaultCamera = new THREE.PerspectiveCamera( 45, container.offsetWidth / container.offsetHeight, 1, 20000 );
+				defaultCamera = new THREE.PerspectiveCamera( 45, container.offsetWidth / container.offsetHeight, 0.1, 1000 );
 
 				//defaultCamera.up = new THREE.Vector3( 0, 1, 0 );
 				scene.add( defaultCamera );
@@ -414,11 +414,19 @@
 
 			var sceneList = [
 				{
-					name : "BoomBox (PBR)", url : "./models/gltf/BoomBox/%s/BoomBox.gltf",
+					name : 'BoomBox (PBR)', url : './models/gltf/BoomBox/%s/BoomBox.gltf',
 					cameraPos: new THREE.Vector3(2, 1, 3),
 					objectRotation: new THREE.Euler(0, Math.PI, 0),
 					addLights:true,
-					extensions: ["glTF", "glTF-pbrSpecularGlossiness", "glTF-Binary"],
+					extensions: ['glTF', 'glTF-pbrSpecularGlossiness', 'glTF-Binary'],
+					addEnvMap: true
+				},
+				{
+					name : 'MetalRoughSpheres (PBR)', url : './models/gltf/MetalRoughSpheres/%s/MetalRoughSpheres.gltf',
+					cameraPos: new THREE.Vector3(2, 1, 35),
+					objectRotation: new THREE.Euler(0, 0, 0),
+					addLights:true,
+					extensions: ['glTF'],
 					addEnvMap: true
 				}
 			];
@@ -434,7 +442,7 @@
 				var i, len = sceneList.length;
 
 				for (i = 0; i < len; i++) {
-					option = document.createElement("option");
+					var option = document.createElement("option");
 					option.text=sceneList[i].name;
 					elt.add(option);
 				}
@@ -486,14 +494,14 @@
 					elt.removeChild(elt.lastChild);
 				}
 
-				option = document.createElement("option");
+				var option = document.createElement("option");
 				option.text="[default]";
 				elt.add(option);
 
 				var i, len = cameraNames.length;
 
 				for (i = 0; i < len; i++) {
-					option = document.createElement("option");
+					var option = document.createElement("option");
 					option.text=cameraNames[i];
 					elt.add(option);
 				}

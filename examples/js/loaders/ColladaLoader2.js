@@ -16,10 +16,14 @@ THREE.ColladaLoader.prototype = {
 
 		var scope = this;
 
+		var resourceDirectory = url.split( /[\\\/]/ );
+		resourceDirectory.pop();
+		resourceDirectory = resourceDirectory.join( '/' ) + '/';
+
 		var loader = new THREE.FileLoader( scope.manager );
 		loader.load( url, function ( text ) {
 
-			onLoad( scope.parse( text ) );
+			onLoad( scope.parse( text, resourceDirectory ) );
 
 		}, onProgress, onError );
 
@@ -29,7 +33,7 @@ THREE.ColladaLoader.prototype = {
 
 		set convertUpAxis( value ) {
 
-			console.log( 'ColladaLoder.options.convertUpAxis: TODO' );
+			console.log( 'THREE.ColladaLoader.options.convertUpAxis: TODO' );
 
 		}
 
@@ -41,7 +45,7 @@ THREE.ColladaLoader.prototype = {
 
 	},
 
-	parse: function ( text ) {
+	parse: function ( text, resourceDirectory ) {
 
 		function getElementsByTagName( xml, name ) {
 
@@ -172,6 +176,268 @@ THREE.ColladaLoader.prototype = {
 
 		}
 
+		// animation
+
+		function parseAnimation( xml ) {
+
+			var data = {
+				sources: {},
+				samplers: {},
+				channels: {}
+			};
+
+			for ( var i = 0, l = xml.childNodes.length; i < l; i ++ ) {
+
+				var child = xml.childNodes[ i ];
+
+				if ( child.nodeType !== 1 ) continue;
+
+				var id;
+
+				switch ( child.nodeName ) {
+
+					case 'source':
+						id = child.getAttribute( 'id' );
+						data.sources[ id ] = parseSource( child );
+						break;
+
+					case 'sampler':
+						id = child.getAttribute( 'id' );
+						data.samplers[ id ] = parseAnimationSampler( child );
+						break;
+
+					case 'channel':
+						id = child.getAttribute( 'target' );
+						data.channels[ id ] = parseAnimationChannel( child );
+						break;
+
+					default:
+						console.log( child );
+
+				}
+
+			}
+
+			library.animations[ xml.getAttribute( 'id' ) ] = data;
+
+		}
+
+		function parseAnimationSampler( xml ) {
+
+			var data = {
+				inputs: {},
+			};
+
+			for ( var i = 0, l = xml.childNodes.length; i < l; i ++ ) {
+
+				var child = xml.childNodes[ i ];
+
+				if ( child.nodeType !== 1 ) continue;
+
+				switch ( child.nodeName ) {
+
+					case 'input':
+						var id = parseId( child.getAttribute( 'source' ) );
+						var semantic = child.getAttribute( 'semantic' );
+						data.inputs[ semantic ] = id;
+						break;
+
+				}
+
+			}
+
+			return data;
+
+		}
+
+		function parseAnimationChannel( xml ) {
+
+			var data = {};
+
+			var target = xml.getAttribute( 'target' );
+
+			// parsing SID Addressing Syntax
+
+			var parts = target.split( '/' );
+
+			var id = parts.shift();
+			var sid = parts.shift();
+
+			// check selection syntax
+
+			var arraySyntax = ( sid.indexOf( '(' ) !== - 1 );
+			var memberSyntax = ( sid.indexOf( '.' ) !== - 1 );
+
+			if ( memberSyntax ) {
+
+				//  member selection access
+
+				parts = sid.split( '.' );
+				sid = parts.shift();
+				data.member = parts.shift();
+
+			} else if ( arraySyntax ) {
+
+				// array-access syntax. can be used to express fields in one-dimensional vectors or two-dimensional matrices.
+
+				var indices = sid.split( '(' );
+				sid = indices.shift();
+
+				for ( var i = 0; i < indices.length; i ++ ) {
+
+					indices[ i ] = parseInt( indices[ i ].replace( /\)/, '' ) );
+
+				}
+
+				data.indices = indices;
+
+			}
+
+			data.id = id;
+			data.sid = sid;
+
+			data.arraySyntax = arraySyntax;
+			data.memberSyntax = memberSyntax;
+
+			data.sampler = parseId( xml.getAttribute( 'source' ) );
+
+			return data;
+
+		}
+
+		// controller
+
+		function parseController( xml ) {
+
+			var data = {
+				skin: {}
+			};
+
+			for ( var i = 0, l = xml.childNodes.length; i < l; i ++ ) {
+
+				var child = xml.childNodes[ i ];
+
+				if ( child.nodeType !== 1 ) continue;
+
+				switch ( child.nodeName ) {
+
+					case 'skin':
+						var id = parseId( child.getAttribute( 'source' ) );
+						data.skin[ id ] = parseSkin( child );
+						break;
+
+				}
+
+			}
+
+			library.controllers[ xml.getAttribute( 'id' ) ] = data;
+
+		}
+
+		function parseSkin( xml ) {
+
+			var data = {
+				sources: {}
+			}
+
+			for ( var i = 0, l = xml.childNodes.length; i < l; i ++ ) {
+
+				var child = xml.childNodes[ i ];
+
+				if ( child.nodeType !== 1 ) continue;
+
+				switch ( child.nodeName ) {
+
+					case 'bind_shape_matrix':
+						data.bindShapeMatrix = parseFloats( child.textContent );
+						break;
+
+					case 'source':
+						var id = child.getAttribute( 'id' );
+						data.sources[ id ] = parseSource( child );
+						break;
+
+					case 'joints':
+						data.joints = parseJoints( child );
+						break;
+
+					case 'vertex_weights':
+						data.vertexWeights = parseVertexWeights( child );
+						break;
+
+				}
+
+			}
+
+			return data;
+
+		}
+
+		function parseJoints( xml ) {
+
+			var data = {
+				inputs: {}
+			}
+
+			for ( var i = 0, l = xml.childNodes.length; i < l; i ++ ) {
+
+				var child = xml.childNodes[ i ];
+
+				if ( child.nodeType !== 1 ) continue;
+
+				switch ( child.nodeName ) {
+
+					case 'input':
+						var semantic = child.getAttribute( 'semantic' );
+						var id = parseId( child.getAttribute( 'source' ) );
+						data.inputs[ semantic ] = id;
+						break;
+
+				}
+
+			}
+
+			return data;
+
+		}
+
+		function parseVertexWeights( xml ) {
+
+			var data = {
+				inputs: {}
+			}
+
+			for ( var i = 0, l = xml.childNodes.length; i < l; i ++ ) {
+
+				var child = xml.childNodes[ i ];
+
+				if ( child.nodeType !== 1 ) continue;
+
+				switch ( child.nodeName ) {
+
+					case 'input':
+						var semantic = child.getAttribute( 'semantic' );
+						var id = parseId( child.getAttribute( 'source' ) );
+						var offset = parseInt( child.getAttribute( 'offset' ) );
+						data.inputs[ semantic ] = { id: id, offset: offset };
+						break;
+
+					case 'vcount':
+						data.vcount = parseInts( child.textContent );
+						break;
+
+					case 'v':
+						data.v = parseInts( child.textContent );
+						break;
+
+				}
+
+			}
+
+			return data;
+
+		}
+
 		// image
 
 		function parseImage( xml ) {
@@ -188,7 +454,7 @@ THREE.ColladaLoader.prototype = {
 
 			if ( data.build !== undefined ) return data.build;
 
-			return new Image();
+			return data.init_from;
 
 		}
 
@@ -572,7 +838,7 @@ THREE.ColladaLoader.prototype = {
 
 					var surface = effect.profile.surfaces[ sampler.source ];
 
-					var texture = new THREE.Texture( getImage( surface.init_from ) );
+					var texture = textureLoader.load( getImage( surface.init_from ) );
 
 					var extra = textureObject.extra;
 
@@ -583,8 +849,8 @@ THREE.ColladaLoader.prototype = {
 						texture.wrapS = technique.wrapU ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping;
 						texture.wrapT = technique.wrapV ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping;
 
-						texture.offset.set( technique.offsetU, technique.offsetV );
-						texture.repeat.set( technique.repeatU, technique.repeatV );
+						texture.offset.set( technique.offsetU || 0, technique.offsetV || 0 );
+						texture.repeat.set( technique.repeatU || 1, technique.repeatV || 1 );
 
 					} else {
 
@@ -593,13 +859,11 @@ THREE.ColladaLoader.prototype = {
 
 					}
 
-					texture.needsUpdate = true;
-
 					return texture;
 
 				}
 
-				console.error( 'ColladaLoder: Undefined sampler', textureObject.id );
+				console.error( 'THREE.ColladaLoader: Undefined sampler', textureObject.id );
 
 				return null;
 
@@ -769,7 +1033,21 @@ THREE.ColladaLoader.prototype = {
 					break;
 
 				case 'orthographic':
-					camera = new THREE.OrthographicCamera( /* TODO */ );
+					var ymag = data.optics.parameters.ymag;
+					var xmag = data.optics.parameters.xmag;
+					var aspectRatio = data.optics.parameters.aspect_ratio;
+
+					xmag = ( xmag === undefined ) ? ( ymag * aspectRatio ) : xmag;
+					ymag = ( ymag === undefined ) ? ( xmag / aspectRatio ) : ymag;
+
+					xmag *= 0.5;
+					ymag *= 0.5;
+
+					camera = new THREE.OrthographicCamera(
+						- xmag, xmag, ymag, - ymag, // left, right, top, bottom
+						data.optics.parameters.znear,
+						data.optics.parameters.zfar
+					);
 					break;
 
 				default:
@@ -939,7 +1217,7 @@ THREE.ColladaLoader.prototype = {
 				switch ( child.nodeName ) {
 
 					case 'source':
-						data.sources[ id ] = parseGeometrySource( child );
+						data.sources[ id ] = parseSource( child );
 						break;
 
 					case 'vertices':
@@ -948,7 +1226,7 @@ THREE.ColladaLoader.prototype = {
 						break;
 
 					case 'polygons':
-						console.warn( 'ColladaLoader: Unsupported primitive type: ', child.nodeName );
+						console.warn( 'THREE.ColladaLoader: Unsupported primitive type: ', child.nodeName );
 						break;
 
 					case 'lines':
@@ -969,7 +1247,7 @@ THREE.ColladaLoader.prototype = {
 
 		}
 
-		function parseGeometrySource( xml ) {
+		function parseSource( xml ) {
 
 			var data = {
 				array: [],
@@ -1211,7 +1489,7 @@ THREE.ColladaLoader.prototype = {
 
 				if ( maxcount > 0 ) {
 
-					console.log( 'ColladaLoader: Geometry has faces with more than 4 vertices.' );
+					console.log( 'THREE.ColladaLoader: Geometry has faces with more than 4 vertices.' );
 
 				}
 
@@ -1505,7 +1783,7 @@ THREE.ColladaLoader.prototype = {
 
 		}
 
-		console.time( 'ColladaLoader' );
+		console.time( 'THREE.ColladaLoader' );
 
 		if ( text.length === 0 ) {
 
@@ -1513,24 +1791,27 @@ THREE.ColladaLoader.prototype = {
 
 		}
 
-		console.time( 'ColladaLoader: DOMParser' );
+		console.time( 'THREE.ColladaLoader: DOMParser' );
 
 		var xml = new DOMParser().parseFromString( text, 'application/xml' );
 
-		console.timeEnd( 'ColladaLoader: DOMParser' );
+		console.timeEnd( 'THREE.ColladaLoader: DOMParser' );
 
 		var collada = getElementsByTagName( xml, 'COLLADA' )[ 0 ];
 
 		// metadata
 
 		var version = collada.getAttribute( 'version' );
-		console.log( 'ColladaLoader: File version', version );
+		console.log( 'THREE.ColladaLoader: File version', version );
 
 		var asset = parseAsset( getElementsByTagName( collada, 'asset' )[ 0 ] );
+		var textureLoader = new THREE.TextureLoader( this.manager ).setPath( resourceDirectory );
 
 		//
 
 		var library = {
+			animations: {},
+			controllers: {},
 			images: {},
 			effects: {},
 			materials: {},
@@ -1541,8 +1822,10 @@ THREE.ColladaLoader.prototype = {
 			visualScenes: {}
 		};
 
-		console.time( 'ColladaLoader: Parse' );
+		console.time( 'THREE.ColladaLoader: Parse' );
 
+		// parseLibrary( collada, 'library_animations', 'animation', parseAnimation );
+		// parseLibrary( collada, 'library_controllers', 'controller', parseController );
 		parseLibrary( collada, 'library_images', 'image', parseImage );
 		parseLibrary( collada, 'library_effects', 'effect', parseEffect );
 		parseLibrary( collada, 'library_materials', 'material', parseMaterial );
@@ -1552,9 +1835,9 @@ THREE.ColladaLoader.prototype = {
 		parseLibrary( collada, 'library_nodes', 'node', parseNode );
 		parseLibrary( collada, 'library_visual_scenes', 'visual_scene', parseVisualScene );
 
-		console.timeEnd( 'ColladaLoader: Parse' );
+		console.timeEnd( 'THREE.ColladaLoader: Parse' );
 
-		console.time( 'ColladaLoader: Build' );
+		console.time( 'THREE.ColladaLoader: Build' );
 
 		buildLibrary( library.images, buildImage );
 		buildLibrary( library.effects, buildEffect );
@@ -1565,7 +1848,7 @@ THREE.ColladaLoader.prototype = {
 		// buildLibrary( library.nodes, buildNode );
 		buildLibrary( library.visualScenes, buildVisualScene );
 
-		console.timeEnd( 'ColladaLoader: Build' );
+		console.timeEnd( 'THREE.ColladaLoader: Build' );
 
 		// console.log( library );
 
@@ -1579,7 +1862,7 @@ THREE.ColladaLoader.prototype = {
 
 		scene.scale.multiplyScalar( asset.unit );
 
-		console.timeEnd( 'ColladaLoader' );
+		console.timeEnd( 'THREE.ColladaLoader' );
 
 		// console.log( scene );
 

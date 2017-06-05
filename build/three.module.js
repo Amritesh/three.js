@@ -10996,6 +10996,7 @@ Object.assign( Object3D.prototype, EventDispatcher.prototype, {
 
 		object.uuid = this.uuid;
 		object.type = this.type;
+		object.renderOrder = this.renderOrder;
 
 		if ( this.name !== '' ) object.name = this.name;
 		if ( JSON.stringify( this.userData ) !== '{}' ) object.userData = this.userData;
@@ -24302,7 +24303,7 @@ function VideoTexture( video, mapping, wrapS, wrapT, magFilter, minFilter, forma
 
 	function update() {
 
-		requestAnimationFrame( update );
+		//requestAnimationFrame( update );
 
 		if ( video.readyState >= video.HAVE_CURRENT_DATA ) {
 
@@ -24312,6 +24313,10 @@ function VideoTexture( video, mapping, wrapS, wrapT, magFilter, minFilter, forma
 
 	}
 
+    // audioTimerLoop(update,33);
+    webWorkerSetInterval(function(){
+        update();
+    },33);    
 	update();
 
 }
@@ -34347,6 +34352,7 @@ Object.assign( ObjectLoader.prototype, {
 			object.uuid = data.uuid;
 
 			if ( data.name !== undefined ) object.name = data.name;
+			if ( data.renderOrder !== undefined ) object.renderOrder = data.renderOrder;
 			if ( data.matrix !== undefined ) {
 
 				matrix.fromArray( data.matrix );

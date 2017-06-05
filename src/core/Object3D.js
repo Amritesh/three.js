@@ -608,6 +608,7 @@ Object.assign( Object3D.prototype, EventDispatcher.prototype, {
 
 		object.uuid = this.uuid;
 		object.type = this.type;
+		object.renderOrder = this.renderOrder;
 
 		if ( this.name !== '' ) object.name = this.name;
 		if ( JSON.stringify( this.userData ) !== '{}' ) object.userData = this.userData;

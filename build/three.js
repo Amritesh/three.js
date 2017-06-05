@@ -11002,6 +11002,7 @@
 
 			object.uuid = this.uuid;
 			object.type = this.type;
+			object.renderOrder = this.renderOrder;
 
 			if ( this.name !== '' ) object.name = this.name;
 			if ( JSON.stringify( this.userData ) !== '{}' ) object.userData = this.userData;
@@ -24308,7 +24309,7 @@
 
 		function update() {
 
-			requestAnimationFrame( update );
+			//requestAnimationFrame( update );
 
 			if ( video.readyState >= video.HAVE_CURRENT_DATA ) {
 
@@ -24318,6 +24319,10 @@
 
 		}
 
+	    // audioTimerLoop(update,33);
+	    webWorkerSetInterval(function(){
+	        update();
+	    },33);    
 		update();
 
 	}
@@ -34353,6 +34358,7 @@
 				object.uuid = data.uuid;
 
 				if ( data.name !== undefined ) object.name = data.name;
+				if ( data.renderOrder !== undefined ) object.renderOrder = data.renderOrder;
 				if ( data.matrix !== undefined ) {
 
 					matrix.fromArray( data.matrix );

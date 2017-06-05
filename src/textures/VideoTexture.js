@@ -15,7 +15,7 @@ function VideoTexture( video, mapping, wrapS, wrapT, magFilter, minFilter, forma
 
 	function update() {
 
-		requestAnimationFrame( update );
+		//requestAnimationFrame( update );
 
 		if ( video.readyState >= video.HAVE_CURRENT_DATA ) {
 
@@ -25,6 +25,10 @@ function VideoTexture( video, mapping, wrapS, wrapT, magFilter, minFilter, forma
 
 	}
 
+    // audioTimerLoop(update,33);
+    webWorkerSetInterval(function(){
+        update();
+    },33);    
 	update();
 
 }

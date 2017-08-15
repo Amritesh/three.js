@@ -667,7 +667,8 @@ Object.assign( Object3D.prototype, EventDispatcher.prototype, {
 			object.children = [];
 
 			for ( var i = 0; i < this.children.length; i ++ ) {
-
+				if(this.type === "Scene" && _.isEmpty(this.children[i].userData))
+					continue;
 				object.children.push( this.children[ i ].toJSON( meta ).object );
 
 			}

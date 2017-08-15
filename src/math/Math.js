@@ -148,6 +148,12 @@ var _Math = {
 
 	},
 
+	maxPowerOfTwo: function ( value ) {
+		
+		return Math.min(1024, _Math.nearestPowerOfTwo(value));
+
+	},
+
 	nextPowerOfTwo: function ( value ) {
 
 		value --;

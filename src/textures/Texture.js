@@ -115,7 +115,7 @@ Object.assign( Texture.prototype, EventDispatcher.prototype, {
 
 	toJSON: function ( meta ) {
 
-		if ( meta.textures[ this.uuid ] !== undefined ) {
+		if ( meta.textures && meta.textures[ this.uuid ] !== undefined ) {
 
 			return meta.textures[ this.uuid ];
 
@@ -125,7 +125,9 @@ Object.assign( Texture.prototype, EventDispatcher.prototype, {
 
             if(image.src !== undefined){
                 return image.src;
-            }
+            } else{
+				return "";
+			}
 
 			var canvas;
 
@@ -182,7 +184,7 @@ Object.assign( Texture.prototype, EventDispatcher.prototype, {
 
 			}
             
-			if ( meta.images[ image.uuid ] === undefined ) {
+			if ( meta.images && meta.images[ image.uuid ] === undefined ) {
 
 				meta.images[ image.uuid ] = {
 					uuid: image.uuid,

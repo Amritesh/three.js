@@ -64,6 +64,10 @@ Object.assign( MaterialLoader.prototype, {
 		if ( json.clearCoat !== undefined ) material.clearCoat = json.clearCoat;
 		if ( json.clearCoatRoughness !== undefined ) material.clearCoatRoughness = json.clearCoatRoughness;
 		if ( json.uniforms !== undefined ) material.uniforms = json.uniforms;
+		if (material.uniforms && material.uniforms.tDiffuse && material.uniforms.tDiffuse.value)	
+			material.uniforms.tDiffuse.value = getTexture( json.map );
+		if (material.uniforms && material.uniforms.map && material.uniforms.map.value)	
+			material.uniforms.map.value = getTexture( json.map );
 		if ( json.vertexShader !== undefined ) material.vertexShader = json.vertexShader;
 		if ( json.fragmentShader !== undefined ) material.fragmentShader = json.fragmentShader;
 		if ( json.vertexColors !== undefined ) material.vertexColors = json.vertexColors;

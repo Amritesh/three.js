@@ -465,18 +465,16 @@ Object.assign( ObjectLoader.prototype, {
 		var videos = {};
 
 		function loadVideo( url ) {
-
-			var video = document.createElement('video');
-            video.id = "video";
-            video.width = 10;
-            video.height = 10;
-            video.setAttribute("loop","");
-            video.setAttribute("style","display:none");
-            video.setAttribute('crossorigin', 'anonymous');
-            video.src = url;
-            document.body.appendChild(video);
-            return video;
-
+			var videos =[document.createElement('video'), document.createElement('video')];
+			_.forEach(videos, function(video){
+				video.setAttribute("style", "display:none");
+				video.setAttribute('crossorigin', 'anonymous');
+				video.autobuffer = true;
+				video.preload = "auto";
+				video.src = url;
+				document.body.appendChild(video);
+			});
+			return videos;
 		}
 
 		if ( json !== undefined && json.length > 0 ) {
@@ -540,8 +538,9 @@ Object.assign( ObjectLoader.prototype, {
                 }
                 if( data.video !== undefined)
                 {
-                    var texture = new VideoTexture(videos[ data.video ]);
-                    videos[ data.video ].className = texture.uuid;
+                    var texture = new VideoTexture(videos[ data.video ][0]);
+					videos[ data.video ][0].className = data.uuid+" active";
+					videos[ data.video ][1].className = data.uuid+" dormant";
                 }
 				texture.needsUpdate = true;
 
@@ -660,6 +659,10 @@ Object.assign( ObjectLoader.prototype, {
 
 						}
 
+					}
+
+					if ( data.transitions !== undefined ) {
+						object.transitions = data.transitions;
 					}
 
 					break;
@@ -821,31 +824,80 @@ Object.assign( ObjectLoader.prototype, {
 			if ( data.visible !== undefined ) object.visible = data.visible;
 			if ( data.userData !== undefined ) object.userData = data.userData;
 
+			if( data.userData !== undefined && data.userData.type === "audio" ){
+				var url = data.userData.url_new;
+				var sound = document.createElement("audio");
+				sound.src = url;
+				sound.setAttribute('crossorigin', 'anonymous');
+				sound.className = object.uuid;
+				document.body.appendChild(sound);
+			}
+			
 			if ( data.children !== undefined ) {
-
 				for ( var child in data.children ) {
+					let childData = data.children[ child ];
+					if(childData.userData !== undefined && childData.userData.subType === "block"){
+						var material = getMaterial( childData.material );
+						var textParams = childData.userData.textParams;
+						
+						var height = 30, hover = 30, curveSegments = 3,
+							bevelThickness = 2, bevelSize = 1.5, bevelSegments = 3,
+							bevelEnabled = true, font = undefined
 
-					if( data.userData !== undefined && data.userData.type === "audio" )
-                    {
-                        var url = data.userData.url_new;
-                        var listener = new THREE.AudioListener();
-                        var sound = new THREE.Audio( listener );
-                        var audioLoader = new THREE.AudioLoader();
-                        audioLoader.load( url, function( buffer ) {
-                            sound.setBuffer( buffer );
-                            object.userData.audioDuration = buffer.duration;
-                            object.userData.duration = buffer.duration;
-                            sound.setLoop(true);
-                            sound.setVolume(1);
-                        });
-                        object.add(sound);
-                    }
-                    else {
-                        object.add( this.parseObject( data.children[ child ], geometries, materials ) );    
-                    }
-                }
+						var loader = new THREE.FontLoader();
+						loader.load( 'examples/fonts/' + textParams.fontFace + '_' + textParams.fontWeight + '.typeface.json', function ( response ) {
+							font = response;
+							var textGeo = new THREE.TextGeometry( textParams.text, {
+								font: font,
+								size: textParams.fontSize,
+								height: height,
+								curveSegments: curveSegments,
+								bevelThickness: bevelThickness,
+								bevelSize: bevelSize,
+								bevelEnabled: bevelEnabled,
+								material: 0,
+								extrudeMaterial: 0
+							});
 
-            }
+							textGeo.computeBoundingBox();
+							textGeo.computeVertexNormals();
+
+							if ( ! bevelEnabled ) {
+								var triangleAreaHeuristics = 0.1 * ( height * size );
+								for ( var i = 0; i < textGeo.faces.length; i ++ ) {
+									var face = textGeo.faces[ i ];
+									if ( face.materialIndex == 1 ) {
+										for ( var j = 0; j < face.vertexNormals.length; j ++ ) {
+											face.vertexNormals[ j ].z = 0;
+											face.vertexNormals[ j ].normalize();
+										}
+										var va = textGeo.vertices[ face.a ];
+										var vb = textGeo.vertices[ face.b ];
+										var vc = textGeo.vertices[ face.c ];
+										var s = THREE.GeometryUtils.triangleArea( va, vb, vc );
+										if ( s > triangleAreaHeuristics ) {
+											for ( var j = 0; j < face.vertexNormals.length; j ++ ) {
+												face.vertexNormals[ j ].copy( face.normal );
+											}
+										}
+									}
+								}
+							}
+							var textMesh = new THREE.Mesh( textGeo, material );
+							matrix.fromArray( childData.matrix );
+							matrix.decompose( textMesh.position, textMesh.quaternion, textMesh.scale );
+							textMesh.name = childData.name;
+							textMesh.renderOrder = childData.renderOrder;
+							textMesh.userData = childData.userData;
+							textMesh.uuid = childData.uuid;
+							editor.scene.add(textMesh);
+						});
+					}
+					else{
+						object.add( this.parseObject( childData, geometries, materials ) );
+					}    
+				}
+			}
                 
             if( data.userData !== undefined && data.userData.isStereo === true )
             {

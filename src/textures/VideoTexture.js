@@ -16,20 +16,17 @@ function VideoTexture( video, mapping, wrapS, wrapT, magFilter, minFilter, forma
 	function update() {
 
 		//requestAnimationFrame( update );
-
-		if ( video.readyState >= video.HAVE_CURRENT_DATA ) {
-
+        //if ( video.readyState >= video.HAVE_CURRENT_DATA ) {
 			scope.needsUpdate = true;
-
-		}
-
+		//}
 	}
 
     // audioTimerLoop(update,33);
-    webWorkerSetInterval(function(){
-        update();
-    },33);    
-	update();
+    // webWorkerSetInterval(function(){
+    //     update();
+    // },33);    
+    // update();
+    this.update = update;
 
 }
 

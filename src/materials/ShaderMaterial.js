@@ -115,7 +115,13 @@ ShaderMaterial.prototype.toJSON = function ( meta ) {
 
 	var data = Material.prototype.toJSON.call( this, meta );
 
-	data.uniforms = this.uniforms;
+	data.uniforms = jQuery.extend(true, {}, this.uniforms);
+	if ( this.uniforms && this.uniforms.tDiffuse && this.uniforms.tDiffuse.value && this.uniforms.tDiffuse.value.isTexture ){ 
+		data.uniforms.tDiffuse.value = data.uniforms.tDiffuse.value.uuid;
+	}
+	if ( this.uniforms && this.uniforms.map && this.uniforms.map.value && this.uniforms.map.value.isTexture ){ 
+		data.uniforms.map.value = data.uniforms.map.value.uuid;
+	}
 	data.vertexShader = this.vertexShader;
 	data.fragmentShader = this.fragmentShader;
 

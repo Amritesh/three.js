@@ -43,7 +43,7 @@ Scene.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 		if ( this.background !== null ) data.object.background = this.background.toJSON( meta );
 		if ( this.fog !== null ) data.object.fog = this.fog.toJSON();
-
+		if ( JSON.stringify( this.transitions ) !== '{}' ) data.object.transitions = this.transitions;
 		return data;
 
 	}

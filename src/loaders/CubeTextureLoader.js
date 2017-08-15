@@ -26,7 +26,7 @@ Object.assign( CubeTextureLoader.prototype, {
 
 		function loadTexture( i ) {
 
-			loader.load( urls[ i ], function ( image ) {
+			loader.load( "", urls[ i ], function ( image ) {
 
 				texture.images[ i ] = image;
 

@@ -118,8 +118,8 @@ Audio.prototype = Object.assign( Object.create( Object3D.prototype ), {
 			return;
 
 		}
-
-		this.source.stop();
+		if(this.source)
+			this.source.stop();
 		this.startTime = this.context.currentTime;
 		this.isPlaying = false;
 

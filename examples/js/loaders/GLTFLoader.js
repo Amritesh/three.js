@@ -17,6 +17,8 @@ THREE.GLTFLoader = ( function () {
 
 		constructor: GLTFLoader,
 
+		crossOrigin: 'Anonymous',
+
 		load: function ( url, onLoad, onProgress, onError ) {
 
 			var scope = this;
@@ -666,7 +668,7 @@ THREE.GLTFLoader = ( function () {
 
 		if ( window.TextDecoder !== undefined ) {
 
-			//return new TextDecoder().decode( array );
+			return new TextDecoder().decode( array );
 
 		}
 
@@ -2041,7 +2043,7 @@ THREE.GLTFLoader = ( function () {
 									var material = originalMaterial;
 									material.skinning = true;
 
-									child = new THREE.SkinnedMesh( geometry, material, false );
+									child = new THREE.SkinnedMesh( geometry, material );
 									child.castShadow = true;
 									child.userData = originalUserData;
 									child.name = originalName;
@@ -2070,7 +2072,7 @@ THREE.GLTFLoader = ( function () {
 
 									}
 
-									child.bind( new THREE.Skeleton( bones, boneInverses, false ), skinEntry.bindShapeMatrix );
+									child.bind( new THREE.Skeleton( bones, boneInverses ), skinEntry.bindShapeMatrix );
 
 									var buildBoneGraph = function ( parentJson, parentObject, property ) {
 

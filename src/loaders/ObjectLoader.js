@@ -449,8 +449,21 @@ Object.assign( ObjectLoader.prototype, {
                 var name = image.name;
 				var path = /^(\/\/)|([a-z]+:(\/\/)?)/i.test( image.url ) ? image.url : scope.texturePath + image.url;
 
-				images[ image.uuid ] = loadImage( name, path );
+				let uuid = image.uuid;
+				images[uuid] = loadImage(name, path);
+				images[uuid].setAttribute('available', 'false');
+				images[uuid].onload = function (uuid) {
+					this.setAttribute('available', 'true');
 
+					/*BIG HACK!!! Remove from here asap */
+					if (editor && editor.timeliner)
+						editor.timeliner.repaint();
+					if (window.ui && ui.angular)
+						ui.angular.$rootScope.$digest();
+				}
+				images[uuid].onerror = function () {
+					this.setAttribute('network-error', 'true');
+				}
 			}
 
 		}
@@ -469,9 +482,21 @@ Object.assign( ObjectLoader.prototype, {
 			_.forEach(videos, function(video){
 				video.setAttribute("style", "display:none");
 				video.setAttribute('crossorigin', 'anonymous');
+				video.setAttribute('available', 'false');
 				video.autobuffer = true;
 				video.preload = "auto";
 				video.src = url;
+				video.onloadedmetadata = function () {
+					this.setAttribute('available', 'true');
+					/*BIG HACK!!! Remove from here asap */
+					if (editor && editor.timeliner)
+						editor.timeliner.repaint();
+					if (window.ui && ui.angular)
+						ui.angular.$rootScope.$digest();
+				}
+				video.onerror = function () {
+					this.setAttribute('network-error', 'true');
+				}
 				document.body.appendChild(video);
 			});
 			return videos;

@@ -4,8 +4,8 @@
 		<title>three.js webvr - sandbox</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-		<!-- Origin Trial Token, feature = WebVR (For Chrome M59+), origin = https://threejs.org, expires = 2017-09-03 -->
-		<meta http-equiv="origin-trial" data-feature="WebVR (For Chrome M59+)" data-expires="2017-09-03" content="Aqj+6XPnxHoSxQj/CDjGXhzrVFeP12/Pgvj7rfqFqVzodYX0ZXJNHTJIvCVExQfvip+Zq9GES+SOQ/zJlpceZgcAAABNeyJvcmlnaW4iOiJodHRwczovL3RocmVlanMub3JnOjQ0MyIsImZlYXR1cmUiOiJXZWJWUjEuMSIsImV4cGlyeSI6MTUwNDQ2NDIwNn0=">
+		<!-- Origin Trial Token, feature = WebVR (For Chrome M59+), origin = https://threejs.org, expires = 2017-11-14 -->
+		<meta http-equiv="origin-trial" data-feature="WebVR (For Chrome M59+)" data-expires="2017-11-14" content="ArBMPtmfrwfw86hMJs4EG/pLjENp0J9EhNnzQVrHeXXMYSDNM/FPZEwZ1etrwiLAW4kNVrzXz5J7OBtFGNhVgQ0AAABNeyJvcmlnaW4iOiJodHRwczovL3RocmVlanMub3JnOjQ0MyIsImZlYXR1cmUiOiJXZWJWUjEuMSIsImV4cGlyeSI6MTUxMDYxNzYwMH0=">
 		<style>
 			body {
 				margin: 0px;
@@ -19,7 +19,7 @@
 
 		<script src="js/vr/WebVR.js"></script>
 
-		<script src="js/Mirror.js"></script>
+		<script src="js/objects/Reflector.js"></script>
 
 		<script>
 
@@ -33,7 +33,7 @@
 
 			var camera, scene, renderer;
 
-			var mirror;
+			var reflector;
 
 			init();
 			animate();
@@ -93,15 +93,15 @@
 
 				//
 
-				mirror = new THREE.Mirror( 1.4, 1.4, {
+				reflector = new THREE.Reflector( 1.4, 1.4, {
 					textureWidth: window.innerWidth * window.devicePixelRatio,
 					textureHeight: window.innerHeight * window.devicePixelRatio
 				} );
-				mirror.position.x = 1;
-				mirror.position.y = 0.5;
-				mirror.position.z = -3;
-				mirror.rotation.y = - Math.PI / 4;
-				scene.add( mirror );
+				reflector.position.x = 1;
+				reflector.position.y = 0.5;
+				reflector.position.z = -3;
+				reflector.rotation.y = - Math.PI / 4;
+				scene.add( reflector );
 
 				var geometry = new THREE.BoxGeometry( 1.5, 1.5, 0.1 );
 				var material = new THREE.MeshStandardMaterial( { roughness: 1.0, metalness: 0.0 } );
@@ -109,7 +109,7 @@
 				mesh.position.z = - 0.07;
 				mesh.castShadow = true;
 				mesh.receiveShadow = true;
-				mirror.add( mesh );
+				reflector.add( mesh );
 
 				//
 

@@ -854,6 +854,9 @@ Object.assign( ObjectLoader.prototype, {
 				var sound = document.createElement("audio");
 				sound.src = url;
 				sound.setAttribute('crossorigin', 'anonymous');
+				sound.onerror = function () {
+					sound.setAttribute('network-error', 'true');
+				}
 				sound.className = object.uuid;
 				document.body.appendChild(sound);
 			}

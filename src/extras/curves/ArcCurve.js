@@ -1,4 +1,4 @@
-import { EllipseCurve } from './EllipseCurve';
+import { EllipseCurve } from './EllipseCurve.js';
 
 
 function ArcCurve( aX, aY, aRadius, aStartAngle, aEndAngle, aClockwise ) {
@@ -9,6 +9,8 @@ function ArcCurve( aX, aY, aRadius, aStartAngle, aEndAngle, aClockwise ) {
 
 ArcCurve.prototype = Object.create( EllipseCurve.prototype );
 ArcCurve.prototype.constructor = ArcCurve;
+
+ArcCurve.prototype.isArcCurve = true;
 
 
 export { ArcCurve };

@@ -1,6 +1,6 @@
 {
   "name": "three",
-  "version": "0.86.0",
+  "version": "0.87.1",
   "description": "JavaScript 3D library",
   "main": "build/three.js",
   "repository": "mrdoob/three.js",
@@ -56,6 +56,6 @@
     "rollup": "^0.43.0",
     "rollup-watch": "^4.0.0",
     "uglify-js": "^3.0.23",
-    "electron": "^1.6.1"
+    "electron": "1.7.8"
   }
 }

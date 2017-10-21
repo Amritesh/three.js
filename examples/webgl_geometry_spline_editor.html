@@ -117,9 +117,9 @@
 				helper.material.transparent = true;
 				scene.add( helper );
 
-				var axis = new THREE.AxisHelper();
-				axis.position.set( -500, -500, -500 );
-				scene.add( axis );
+				//var axes = new THREE.AxesHelper( 1000 );
+				//axes.position.set( - 500, - 500, - 500 );
+				//scene.add( axes );
 
 				renderer = new THREE.WebGLRenderer( { antialias: true } );
 				renderer.setPixelRatio( window.devicePixelRatio );
@@ -362,14 +362,14 @@
 					for ( var i = 0; i < ARC_SEGMENTS; i ++ ) {
 
 						var p = splineMesh.geometry.vertices[ i ];
-						p.copy( spline.getPoint( i /  ( ARC_SEGMENTS - 1 ) ) );
+						var t = i /  ( ARC_SEGMENTS - 1 );
+						spline.getPoint( t, p );
 
 					}
 
 					splineMesh.geometry.verticesNeedUpdate = true;
 
 				}
-
 
 			}
 

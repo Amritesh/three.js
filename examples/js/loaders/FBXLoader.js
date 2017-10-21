@@ -254,12 +254,20 @@
 
 			default:
 
-				console.warn( 'FBXLoader: No support image type ' + extension );
+				console.warn( 'FBXLoader: Image type "' + extension + '" is not supported.' );
 				return;
 
 		}
 
 		if ( typeof content === 'string' ) {
+
+			// ASCII format sometimes an extra ',' gets added to the end of the content string
+			// TODO: Investigate why the parser is adding this character
+			if ( content.slice( - 1 ) === ',' ) {
+
+				content = content.slice( 0, - 1 );
+
+			}
 
 			return 'data:' + type + ';base64,' + content;
 
@@ -314,7 +322,7 @@
 
 		var FBX_ID = textureNode.id;
 
-		var name = textureNode.name;
+		var name = textureNode.attrName;
 
 		var fileName;
 
@@ -401,7 +409,7 @@
 			for ( var nodeID in materialNodes ) {
 
 				var material = parseMaterial( materialNodes[ nodeID ], textureMap, connections );
-				materialMap.set( parseInt( nodeID ), material );
+				if ( material !== null ) materialMap.set( parseInt( nodeID ), material );
 
 			}
 
@@ -424,12 +432,16 @@
 		var name = materialNode.attrName;
 		var type = materialNode.properties.ShadingModel;
 
-		//Case where FBXs wrap shading model in property object.
+		//Case where FBX wraps shading model in property object.
 		if ( typeof type === 'object' ) {
 
 			type = type.value;
 
 		}
+
+		// Seems like FBX can include unused materials which don't have any connections.
+		// Ignores them so far.
+		if ( ! connections.has( FBX_ID ) ) return null;
 
 		var children = connections.get( FBX_ID ).children;
 
@@ -446,8 +458,8 @@
 				material = new THREE.MeshLambertMaterial();
 				break;
 			default:
-				console.warn( 'THREE.FBXLoader: No implementation given for material type %s in FBXLoader.js. Defaulting to basic material.', type );
-				material = new THREE.MeshBasicMaterial( { color: 0x3300ff } );
+				console.warn( 'THREE.FBXLoader: unknown material type "%s". Defaulting to MeshPhongMaterial.', type );
+				material = new THREE.MeshPhongMaterial( { color: 0x3300ff } );
 				break;
 
 		}
@@ -475,9 +487,24 @@
 
 		var parameters = {};
 
+		if ( properties.BumpFactor ) {
+
+			parameters.bumpScale = parseFloat( properties.BumpFactor.value );
+
+		}
 		if ( properties.Diffuse ) {
 
 			parameters.color = parseColor( properties.Diffuse );
+
+		}
+		if ( properties.DisplacementFactor ) {
+
+			parameters.displacementScale = parseFloat( properties.DisplacementFactor.value );
+
+		}
+		if ( properties.ReflectionFactor ) {
+
+			parameters.reflectivity = parseFloat( properties.ReflectionFactor.value );
 
 		}
 		if ( properties.Specular ) {
@@ -487,7 +514,7 @@
 		}
 		if ( properties.Shininess ) {
 
-			parameters.shininess = properties.Shininess.value;
+			parameters.shininess = parseFloat( properties.Shininess.value );
 
 		}
 		if ( properties.Emissive ) {
@@ -497,12 +524,12 @@
 		}
 		if ( properties.EmissiveFactor ) {
 
-			parameters.emissiveIntensity = properties.EmissiveFactor.value;
+			parameters.emissiveIntensity = parseFloat( properties.EmissiveFactor.value );
 
 		}
 		if ( properties.Opacity ) {
 
-			parameters.opacity = properties.Opacity.value;
+			parameters.opacity = parseFloat( properties.Opacity.value );
 
 		}
 		if ( parameters.opacity < 1.0 ) {
@@ -519,14 +546,25 @@
 
 			switch ( type ) {
 
+				case 'Bump':
+				case ' "Bump':
+					parameters.bumpMap = textureMap.get( relationship.ID );
+					break;
+
 				case 'DiffuseColor':
 				case ' "DiffuseColor':
 					parameters.map = textureMap.get( relationship.ID );
 					break;
 
-				case 'Bump':
-				case ' "Bump':
-					parameters.bumpMap = textureMap.get( relationship.ID );
+				case 'DisplacementColor':
+				case ' "DisplacementColor':
+					parameters.displacementMap = textureMap.get( relationship.ID );
+					break;
+
+
+				case 'EmissiveColor':
+				case ' "EmissiveColor':
+					parameters.emissiveMap = textureMap.get( relationship.ID );
 					break;
 
 				case 'NormalMap':
@@ -534,12 +572,33 @@
 					parameters.normalMap = textureMap.get( relationship.ID );
 					break;
 
+				case 'ReflectionColor':
+				case ' "ReflectionColor':
+					parameters.envMap = textureMap.get( relationship.ID );
+					parameters.envMap.mapping = THREE.EquirectangularReflectionMapping;
+					break;
+
+				case 'SpecularColor':
+				case ' "SpecularColor':
+					parameters.specularMap = textureMap.get( relationship.ID );
+					break;
+
+				case 'TransparentColor':
+				case ' "TransparentColor':
+					parameters.alphaMap = textureMap.get( relationship.ID );
+					parameters.transparent = true;
+					break;
+
 				case 'AmbientColor':
-				case 'EmissiveColor':
 				case ' "AmbientColor':
-				case ' "EmissiveColor':
+				case 'ShininessExponent': // AKA glossiness map
+				case ' "ShininessExponent':
+				case 'SpecularFactor': // AKA specularLevel
+				case ' "SpecularFactor':
+				case 'VectorDisplacementColor': // NOTE: Seems to be a copy of DisplacementColor
+				case ' "VectorDisplacementColor':
 				default:
-					console.warn( 'THREE.FBXLoader: Unknown texture application of type %s, skipping texture.', type );
+					console.warn( 'THREE.FBXLoader: %s map is not supported in three.js, skipping texture.', type );
 					break;
 
 			}
@@ -726,7 +785,14 @@
 
 		if ( subNodes.LayerElementUV ) {
 
-			var uvInfo = getUVs( subNodes.LayerElementUV[ 0 ] );
+			var uvInfo = [];
+			var i = 0;
+			while ( subNodes.LayerElementUV[ i ] ) {
+
+				uvInfo.push( getUVs( subNodes.LayerElementUV[ i ] ) );
+				i ++;
+
+			}
 
 		}
 
@@ -869,7 +935,13 @@
 
 			if ( uvInfo ) {
 
-				vertex.uv.fromArray( getData( polygonVertexIndex, polygonIndex, vertexIndex, uvInfo ) );
+				var uvTemp = new THREE.Vector2();
+
+				for ( var i = 0; i < uvInfo.length; i ++ ) {
+
+					vertex.uv.push( uvTemp.fromArray( getData( polygonVertexIndex, polygonIndex, vertexIndex, uvInfo[ i ] ) ) );
+
+				}
 
 			}
 
@@ -923,11 +995,23 @@
 			geo.addAttribute( 'normal', new THREE.Float32BufferAttribute( bufferInfo.normalBuffer, 3 ) );
 
 		}
-		if ( bufferInfo.uvBuffer.length > 0 ) {
+		if ( bufferInfo.uvBuffers.length > 0 ) {
 
-			geo.addAttribute( 'uv', new THREE.Float32BufferAttribute( bufferInfo.uvBuffer, 2 ) );
+			for ( var i = 0; i < bufferInfo.uvBuffers.length; i ++ ) {
+
+				var name = 'uv' + ( i + 1 ).toString();
+				if ( i == 0 ) {
+
+					name = 'uv';
+
+				}
+
+				geo.addAttribute( name, new THREE.Float32BufferAttribute( bufferInfo.uvBuffers[ i ], 2 ) );
+
+			}
 
 		}
+
 		if ( subNodes.LayerElementColor ) {
 
 			geo.addAttribute( 'color', new THREE.Float32BufferAttribute( bufferInfo.colorBuffer, 3 ) );
@@ -1373,6 +1457,236 @@
 
 				switch ( node.attrType ) {
 
+					case 'Camera':
+						/* ***********
+						* Supported camera types:
+						* PerspectiveCamera
+						* OrthographicCamera
+						************** */
+						var cameraAttribute;
+
+						for ( var childrenIndex = 0, childrenLength = conns.children.length; childrenIndex < childrenLength; ++ childrenIndex ) {
+
+							var childID = conns.children[ childrenIndex ].ID;
+
+							var attr = FBXTree.Objects.subNodes.NodeAttribute[ childID ];
+
+							if ( attr !== undefined && attr.properties !== undefined ) {
+
+								cameraAttribute = attr.properties;
+
+							}
+
+						}
+
+						if ( cameraAttribute === undefined ) {
+
+							model = new THREE.Object3D();
+
+						} else {
+
+							var type = 0;
+							if ( cameraAttribute.CameraProjectionType !== undefined && ( cameraAttribute.CameraProjectionType.value === '1' || cameraAttribute.CameraProjectionType.value === 1 ) ) {
+
+								type = 1;
+
+							}
+
+							var nearClippingPlane = 1;
+							if ( cameraAttribute.NearPlane !== undefined ) {
+
+								nearClippingPlane = cameraAttribute.NearPlane.value / 1000;
+
+							}
+
+							var farClippingPlane = 1000;
+							if ( cameraAttribute.FarPlane !== undefined ) {
+
+								farClippingPlane = cameraAttribute.FarPlane.value / 1000;
+
+							}
+
+
+							var width = window.innerWidth;
+							var height = window.innerHeight;
+
+							if ( cameraAttribute.AspectWidth !== undefined && cameraAttribute.AspectHeight !== undefined ) {
+
+								width = parseFloat( cameraAttribute.AspectWidth.value );
+								height = parseFloat( cameraAttribute.AspectHeight.value );
+
+							}
+
+							var aspect = width / height;
+
+							var fov = 45;
+							if ( cameraAttribute.FieldOfView !== undefined ) {
+
+								fov = parseFloat( cameraAttribute.FieldOfView.value );
+
+							}
+
+							switch ( type ) {
+
+								case '0': // Perspective
+								case 0:
+									model = new THREE.PerspectiveCamera( fov, aspect, nearClippingPlane, farClippingPlane );
+									break;
+
+								case '1': // Orthographic
+								case 1:
+									model = new THREE.OrthographicCamera( - width / 2, width / 2, height / 2, - height / 2, nearClippingPlane, farClippingPlane );
+									break;
+
+								default:
+									console.warn( 'THREE.FBXLoader: Unknown camera type ' + type + '.' );
+									model = new THREE.Object3D();
+									break;
+
+							}
+
+						}
+
+						break;
+
+					case 'Light':
+						/* ***********
+						* Supported light types:
+						* DirectionalLight
+						* PointLight
+						* SpotLight
+						************** */
+
+						var lightAttribute;
+
+						for ( var childrenIndex = 0, childrenLength = conns.children.length; childrenIndex < childrenLength; ++ childrenIndex ) {
+
+							var childID = conns.children[ childrenIndex ].ID;
+
+							var attr = FBXTree.Objects.subNodes.NodeAttribute[ childID ];
+
+							if ( attr !== undefined && attr.properties !== undefined ) {
+
+								lightAttribute = attr.properties;
+
+							}
+
+						}
+
+						if ( lightAttribute === undefined ) {
+
+							model = new THREE.Object3D();
+
+						} else {
+
+							var type;
+
+							// LightType can be undefined for Point lights
+							if ( lightAttribute.LightType === undefined ) {
+
+								type = 0;
+
+							} else {
+
+								type = lightAttribute.LightType.value;
+
+							}
+
+							var color = 0xffffff;
+
+							if ( lightAttribute.Color !== undefined ) {
+
+								var temp = lightAttribute.Color.value.split( ',' );
+
+								var r = parseFloat( temp[ 0 ] );
+								var g = parseFloat( temp[ 1 ] );
+								var b = parseFloat( temp[ 1 ] );
+
+								color = new THREE.Color( r, g, b );
+
+							}
+
+							var intensity = ( lightAttribute.Intensity === undefined ) ? 1 : lightAttribute.Intensity.value / 100;
+
+							// light disabled
+							if ( lightAttribute.CastLightOnObject !== undefined && ( lightAttribute.CastLightOnObject.value === '0' || lightAttribute.CastLightOnObject.value === 0 ) ) {
+
+								intensity = 0;
+
+							}
+
+							var distance = 0;
+							if ( lightAttribute.FarAttenuationEnd !== undefined ) {
+
+								if ( lightAttribute.EnableFarAttenuation !== undefined && ( lightAttribute.EnableFarAttenuation.value === '0' || lightAttribute.EnableFarAttenuation.value === 0 ) ) {
+
+									distance = 0;
+
+								} else {
+
+									distance = lightAttribute.FarAttenuationEnd.value / 1000;
+
+								}
+
+							}
+
+							// TODO
+							// could be calculated linearly from FarAttenuationStart to FarAttenuationEnd?
+							var decay = 1;
+
+							switch ( type ) {
+
+								case '0': // Point
+								case 0:
+									model = new THREE.PointLight( color, intensity, distance, decay );
+									break;
+
+								case '1': // Directional
+								case 1:
+									model = new THREE.DirectionalLight( color, intensity );
+									break;
+
+								case '2': // Spot
+								case 2:
+									var angle = Math.PI / 3;
+
+									if ( lightAttribute.InnerAngle !== undefined ) {
+
+										angle = THREE.Math.degToRad( lightAttribute.InnerAngle.value );
+
+									}
+
+									var penumbra = 0;
+									if ( lightAttribute.OuterAngle !== undefined ) {
+
+										// TODO: this is not correct - FBX calculates outer and inner angle in degrees
+										// with OuterAngle > InnerAngle && OuterAngle <= Math.PI
+										// while three.js uses a penumbra between (0, 1) to attenuate the inner angle
+										penumbra = THREE.Math.degToRad( lightAttribute.OuterAngle.value );
+										penumbra = Math.max( penumbra, 1 );
+
+									}
+
+									model = new THREE.SpotLight( color, intensity, distance, angle, penumbra, decay );
+									break;
+
+								default:
+									console.warn( 'THREE.FBXLoader: Unknown light type ' + lightAttribute.LightType.value + ', defaulting to a THREE.PointLight.' );
+									model = new THREE.PointLight( color, intensity );
+									break;
+
+							}
+
+							if ( lightAttribute.CastShadows !== undefined && ( lightAttribute.CastShadows.value === '1' || lightAttribute.CastShadows.value === 1 ) ) {
+
+								model.castShadow = true;
+
+							}
+
+						}
+
+						break;
+
 					case 'Mesh':
 						/**
 						 * @type {?THREE.BufferGeometry}
@@ -1416,13 +1730,13 @@
 
 						} else {
 
-							material = new THREE.MeshBasicMaterial( { color: 0x3300ff } );
+							material = new THREE.MeshStandardMaterial( { color: 0x3300ff } );
 							materials.push( material );
 
 						}
 						if ( 'color' in geometry.attributes ) {
 
-							for ( var materialIndex = 0, numMaterials = materials.length; materialIndex < numMaterials; ++materialIndex ) {
+							for ( var materialIndex = 0, numMaterials = materials.length; materialIndex < numMaterials; ++ materialIndex ) {
 
 								materials[ materialIndex ].vertexColors = THREE.VertexColors;
 
@@ -1466,14 +1780,14 @@
 						break;
 
 					default:
-						model = new THREE.Object3D();
+						model = new THREE.Group();
 						break;
 
 				}
 
 			}
 
-			model.name = node.attrName.replace( /:/, '' ).replace( /_/, '' ).replace( /-/, '' );
+			model.name = THREE.PropertyBinding.sanitizeNodeName( node.attrName );
 			model.FBX_ID = id;
 
 			modelArray.push( model );
@@ -1514,6 +1828,64 @@
 				var currentRotation = new THREE.Quaternion().setFromEuler( model.rotation );
 				preRotations.multiply( currentRotation );
 				model.rotation.setFromQuaternion( preRotations, 'ZYX' );
+
+			}
+
+			// allow transformed pivots - see https://github.com/mrdoob/three.js/issues/11895
+			if ( 'GeometricTranslation' in node.properties ) {
+
+				var array = node.properties.GeometricTranslation.value;
+
+				model.traverse( function ( child ) {
+
+					if ( child.geometry ) {
+
+						child.geometry.translate( array[ 0 ], array[ 1 ], array[ 2 ] );
+
+					}
+
+				} );
+
+			}
+
+			if ( 'LookAtProperty' in node.properties ) {
+
+				var conns = connections.get( model.FBX_ID );
+
+				for ( var childrenIndex = 0, childrenLength = conns.children.length; childrenIndex < childrenLength; ++ childrenIndex ) {
+
+					var child = conns.children[ childrenIndex ];
+
+					if ( child.relationship === 'LookAtProperty' || child.relationship === ' "LookAtProperty' ) {
+
+						var lookAtTarget = FBXTree.Objects.subNodes.Model[ child.ID ];
+
+						if ( 'Lcl_Translation' in lookAtTarget.properties ) {
+
+							var pos = lookAtTarget.properties.Lcl_Translation.value.split( ',' ).map( function ( val ) {
+
+								return parseFloat( val );
+
+							} );
+
+							// DirectionalLight, SpotLight
+							if ( model.target !== undefined ) {
+
+								model.target.position.set( pos[ 0 ], pos[ 1 ], pos[ 2 ] );
+								sceneGraph.add( model.target );
+
+
+							} else { // Cameras and other Object3Ds
+
+								model.lookAt( new THREE.Vector3( pos[ 0 ], pos[ 1 ], pos[ 2 ] ) );
+
+							}
+
+						}
+
+					}
+
+				}
 
 			}
 
@@ -1637,7 +2009,7 @@
 		sceneGraph.updateMatrixWorld( true );
 
 		// Silly hack with the animation parsing.  We're gonna pretend the scene graph has a skeleton
-		// to attach animations to, since FBXs treat animations as animations for the entire scene,
+		// to attach animations to, since FBX treats animations as animations for the entire scene,
 		// not just for individual objects.
 		sceneGraph.skeleton = {
 			bones: modelArray
@@ -1646,6 +2018,25 @@
 		var animations = parseAnimations( FBXTree, connections, sceneGraph );
 
 		addAnimations( sceneGraph, animations );
+
+
+		// Parse ambient color - if it's not set to black (default), create an ambient light
+		if ( 'GlobalSettings' in FBXTree && 'AmbientColor' in FBXTree.GlobalSettings.properties ) {
+
+			var ambientColor = FBXTree.GlobalSettings.properties.AmbientColor.value;
+			var r = ambientColor[ 0 ];
+			var g = ambientColor[ 1 ];
+			var b = ambientColor[ 2 ];
+
+			if ( r !== 0 || g !== 0 || b !== 0 ) {
+
+				var color = new THREE.Color( r, g, b );
+				sceneGraph.add( new THREE.AmbientLight( color, 1 ) );
+
+			}
+
+		}
+
 
 		return sceneGraph;
 
@@ -1662,6 +2053,55 @@
 		var rawCurves = FBXTree.Objects.subNodes.AnimationCurve;
 		var rawLayers = FBXTree.Objects.subNodes.AnimationLayer;
 		var rawStacks = FBXTree.Objects.subNodes.AnimationStack;
+
+		var fps = 30; // default framerate
+
+		if ( 'GlobalSettings' in FBXTree && 'TimeMode' in FBXTree.GlobalSettings.properties ) {
+
+			/* Autodesk time mode documentation can be found here:
+			*	http://docs.autodesk.com/FBX/2014/ENU/FBX-SDK-Documentation/index.html?url=cpp_ref/class_fbx_time.html,topicNumber=cpp_ref_class_fbx_time_html
+			*/
+			var timeModeEnum = [
+				30, // 0: eDefaultMode
+				120, // 1: eFrames120
+				100, // 2: eFrames100
+				60, // 3: eFrames60
+				50, // 4: eFrames50
+				48, // 5: eFrames48
+				30, // 6: eFrames30 (black and white NTSC )
+				30, // 7: eFrames30Drop
+				29.97, // 8: eNTSCDropFrame
+				29.97, // 90: eNTSCFullFrame
+				25, // 10: ePal ( PAL/SECAM )
+				24, // 11: eFrames24 (Film/Cinema)
+				1, // 12: eFrames1000 (use for date time))
+				23.976, // 13: eFilmFullFrame
+				30, // 14: eCustom: use GlobalSettings.properties.CustomFrameRate.value
+				96, // 15: eFrames96
+				72, // 16:  eFrames72
+				59.94, // 17: eFrames59dot94
+			];
+
+			var eMode = FBXTree.GlobalSettings.properties.TimeMode.value;
+
+			if ( eMode === 14 ) {
+
+				if ( 'CustomFrameRate' in FBXTree.GlobalSettings.properties ) {
+
+					fps = parseFloat( FBXTree.GlobalSettings.properties.CustomFrameRate.value );
+
+					fps = ( fps === - 1 ) ? 30 : fps;
+
+				}
+
+			} else if ( eMode <= 17 ) { // for future proofing - if more eModes get added, they will default to 30fps
+
+				fps = timeModeEnum[ eMode ];
+
+			}
+
+		}
+
 
 		/**
 		 * @type {{
@@ -2036,7 +2476,7 @@
 			layers: {},
 			stacks: {},
 			length: 0,
-			fps: 30,
+			fps: fps,
 			frames: 0
 		};
 
@@ -2434,7 +2874,7 @@
 					name: rawStacks[ nodeID ].attrName,
 					layers: layers,
 					length: timestamps.max - timestamps.min,
-					frames: ( timestamps.max - timestamps.min ) * 30
+					frames: ( timestamps.max - timestamps.min ) * returnObject.fps
 				};
 
 			}
@@ -3194,7 +3634,7 @@
 			 */
 			var animationData = {
 				name: stack.name,
-				fps: 30,
+				fps: animations.fps,
 				length: stack.length,
 				hierarchy: []
 			};
@@ -3361,10 +3801,10 @@
 		this.normal = new THREE.Vector3();
 
 		/**
-		 * UV coordinates of the vertex.
-		 * @type {THREE.Vector2}
+		 * Array of UV coordinates of the vertex.
+		 * @type {Array of THREE.Vector2}
 		 */
-		this.uv = new THREE.Vector2();
+		this.uv = [];
 
 		/**
 		 * Color of the vertex
@@ -3402,11 +3842,16 @@
 
 		},
 
-		flattenToBuffers: function ( vertexBuffer, normalBuffer, uvBuffer, colorBuffer, skinIndexBuffer, skinWeightBuffer ) {
+		flattenToBuffers: function ( vertexBuffer, normalBuffer, uvBuffers, colorBuffer, skinIndexBuffer, skinWeightBuffer ) {
 
 			this.position.toArray( vertexBuffer, vertexBuffer.length );
 			this.normal.toArray( normalBuffer, normalBuffer.length );
-			this.uv.toArray( uvBuffer, uvBuffer.length );
+
+			for ( var i = 0; i < this.uv.length; i ++ ) {
+
+				this.uv[ i ].toArray( uvBuffers[ i ], uvBuffers[ i ].length );
+
+			}
 			this.color.toArray( colorBuffer, colorBuffer.length );
 			this.skinIndices.toArray( skinIndexBuffer, skinIndexBuffer.length );
 			this.skinWeights.toArray( skinWeightBuffer, skinWeightBuffer.length );
@@ -3443,13 +3888,13 @@
 
 		},
 
-		flattenToBuffers: function ( vertexBuffer, normalBuffer, uvBuffer, colorBuffer, skinIndexBuffer, skinWeightBuffer ) {
+		flattenToBuffers: function ( vertexBuffer, normalBuffer, uvBuffers, colorBuffer, skinIndexBuffer, skinWeightBuffer ) {
 
 			var vertices = this.vertices;
 
 			for ( var i = 0, l = vertices.length; i < l; ++ i ) {
 
-				vertices[ i ].flattenToBuffers( vertexBuffer, normalBuffer, uvBuffer, colorBuffer, skinIndexBuffer, skinWeightBuffer );
+				vertices[ i ].flattenToBuffers( vertexBuffer, normalBuffer, uvBuffers, colorBuffer, skinIndexBuffer, skinWeightBuffer );
 
 			}
 
@@ -3502,14 +3947,14 @@
 
 		},
 
-		flattenToBuffers: function ( vertexBuffer, normalBuffer, uvBuffer, colorBuffer, skinIndexBuffer, skinWeightBuffer, materialIndexBuffer ) {
+		flattenToBuffers: function ( vertexBuffer, normalBuffer, uvBuffers, colorBuffer, skinIndexBuffer, skinWeightBuffer, materialIndexBuffer ) {
 
 			var triangles = this.triangles;
 			var materialIndex = this.materialIndex;
 
 			for ( var i = 0, l = triangles.length; i < l; ++ i ) {
 
-				triangles[ i ].flattenToBuffers( vertexBuffer, normalBuffer, uvBuffer, colorBuffer, skinIndexBuffer, skinWeightBuffer );
+				triangles[ i ].flattenToBuffers( vertexBuffer, normalBuffer, uvBuffers, colorBuffer, skinIndexBuffer, skinWeightBuffer );
 				append( materialIndexBuffer, [ materialIndex, materialIndex, materialIndex ] );
 
 			}
@@ -3524,7 +3969,7 @@
 	function Geometry() {
 
 		/**
-		 * @type {{triangles: {vertices: {position: THREE.Vector3, normal: THREE.Vector3, uv: THREE.Vector2, skinIndices: THREE.Vector4, skinWeights: THREE.Vector4}[]}[], materialIndex: number}[]}
+		 * @type {{triangles: {vertices: {position: THREE.Vector3, normal: THREE.Vector3, uv: Array of THREE.Vector2, skinIndices: THREE.Vector4, skinWeights: THREE.Vector4}[]}[], materialIndex: number}[]}
 		 */
 		this.faces = [];
 
@@ -3538,31 +3983,36 @@
 	Object.assign( Geometry.prototype, {
 
 		/**
-		 * @returns	{{vertexBuffer: number[], normalBuffer: number[], uvBuffer: number[], skinIndexBuffer: number[], skinWeightBuffer: number[], materialIndexBuffer: number[]}}
+		 * @returns	{{vertexBuffer: number[], normalBuffer: number[], uvBuffers: Array of number[], skinIndexBuffer: number[], skinWeightBuffer: number[], materialIndexBuffer: number[]}}
 		 */
-		flattenToBuffers: function () {
+	 	flattenToBuffers: function () {
 
 			var vertexBuffer = [];
 			var normalBuffer = [];
-			var uvBuffer = [];
+			var uvBuffers = [];
 			var colorBuffer = [];
 			var skinIndexBuffer = [];
 			var skinWeightBuffer = [];
-
 			var materialIndexBuffer = [];
 
 			var faces = this.faces;
 
+			for ( var i = 0; i < faces[ 0 ].triangles[ 0 ].vertices[ 0 ].uv.length; i ++ ) {
+
+				uvBuffers.push( [] );
+
+			}
+
 			for ( var i = 0, l = faces.length; i < l; ++ i ) {
 
-				faces[ i ].flattenToBuffers( vertexBuffer, normalBuffer, uvBuffer, colorBuffer, skinIndexBuffer, skinWeightBuffer, materialIndexBuffer );
+				faces[ i ].flattenToBuffers( vertexBuffer, normalBuffer, uvBuffers, colorBuffer, skinIndexBuffer, skinWeightBuffer, materialIndexBuffer );
 
 			}
 
 			return {
 				vertexBuffer: vertexBuffer,
 				normalBuffer: normalBuffer,
-				uvBuffer: uvBuffer,
+				uvBuffers: uvBuffers,
 				colorBuffer: colorBuffer,
 				skinIndexBuffer: skinIndexBuffer,
 				skinWeightBuffer: skinWeightBuffer,
@@ -3655,7 +4105,9 @@
 					var nodeAttrs = match[ 2 ].split( ',' );
 
 					for ( var i = 0, l = nodeAttrs.length; i < l; i ++ ) {
+
 						nodeAttrs[ i ] = nodeAttrs[ i ].trim().replace( /^"/, '' ).replace( /"$/, '' );
+
 					}
 
 					this.parseNodeBegin( l, nodeName, nodeAttrs || null );
@@ -3704,7 +4156,7 @@
 				// 0.12490539252758,13.7450733184814,-0.454119384288788,0.09272.....
 				// 0.0836158767342567,13.5432004928589,-0.435397416353226,0.028.....
 				//
-				// these case the lines must contiue with previous line
+				// in these case the lines must continue from the previous line
 				if ( l.match( /^[^\s\t}]/ ) ) {
 
 					this.parseNodePropertyContinued( l );
@@ -3921,7 +4373,9 @@
 			var props = propValue.split( '",' );
 
 			for ( var i = 0, l = props.length; i < l; i ++ ) {
+
 				props[ i ] = props[ i ].trim().replace( /^\"/, '' ).replace( /\s/, '_' );
+
 			}
 
 			var innerPropName = props[ 0 ];
@@ -4023,7 +4477,7 @@
 		 * @param {BinaryReader} reader
 		 * @returns {boolean}
 		 */
-		endOfContent: function( reader ) {
+		endOfContent: function ( reader ) {
 
 			// footer size: 160bytes + 16-byte alignment padding
 			// - 16bytes: magic
@@ -4035,7 +4489,7 @@
 			// - 16bytes: magic
 			if ( reader.size() % 16 === 0 ) {
 
-				return ( ( reader.getOffset() + 160 + 16 ) & ~0xf ) >= reader.size();
+				return ( ( reader.getOffset() + 160 + 16 ) & ~ 0xf ) >= reader.size();
 
 			} else {
 
@@ -4351,7 +4805,7 @@
 
 					}
 
-					var inflate = new Zlib.Inflate( new Uint8Array( reader.getArrayBuffer( compressedLength ) ) );
+					var inflate = new Zlib.Inflate( new Uint8Array( reader.getArrayBuffer( compressedLength ) ) ); // eslint-disable-line no-undef
 					var reader2 = new BinaryReader( inflate.decompress().buffer );
 
 					switch ( type ) {
@@ -4598,8 +5052,8 @@
 			// calculate negative value
 			if ( high & 0x80000000 ) {
 
-				high = ~high & 0xFFFFFFFF;
-				low = ~low & 0xFFFFFFFF;
+				high = ~ high & 0xFFFFFFFF;
+				low = ~ low & 0xFFFFFFFF;
 
 				if ( low === 0xFFFFFFFF ) high = ( high + 1 ) & 0xFFFFFFFF;
 
@@ -4727,13 +5181,16 @@
 			while ( size > 0 ) {
 
 				var value = this.getUint8();
-				size--;
+				size --;
 
 				if ( value === 0 ) break;
 
 				s += String.fromCharCode( value );
 
 			}
+
+			// Manage UTF8 encoding
+			s = decodeURIComponent( escape( s ) );
 
 			this.skip( size );
 
@@ -5088,7 +5545,7 @@
 
 		}
 
-		return -1;
+		return - 1;
 
 	}
 

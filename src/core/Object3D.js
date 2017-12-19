@@ -98,7 +98,9 @@ function Object3D() {
 Object3D.DefaultUp = new Vector3( 0, 1, 0 );
 Object3D.DefaultMatrixAutoUpdate = true;
 
-Object.assign( Object3D.prototype, EventDispatcher.prototype, {
+Object3D.prototype = Object.assign( Object.create( EventDispatcher.prototype ), {
+
+	constructor: Object3D,
 
 	isObject3D: true,
 
@@ -627,7 +629,8 @@ Object.assign( Object3D.prototype, EventDispatcher.prototype, {
 				materials: {},
 				textures: {},
 				images: {},
-                videos: {}
+                videos: {},
+				shapes: {}
 			};
 
 			output.metadata = {
@@ -671,6 +674,30 @@ Object.assign( Object3D.prototype, EventDispatcher.prototype, {
 		if ( this.geometry !== undefined ) {
 
 			object.geometry = serialize( meta.geometries, this.geometry );
+
+			var parameters = this.geometry.parameters;
+
+			if ( parameters !== undefined && parameters.shapes !== undefined ) {
+
+				var shapes = parameters.shapes;
+
+				if ( Array.isArray( shapes ) ) {
+
+					for ( var i = 0, l = shapes.length; i < l; i ++ ) {
+
+						var shape = shapes[ i ];
+
+						serialize( meta.shapes, shape );
+
+					}
+
+				} else {
+
+					serialize( meta.shapes, shapes );
+
+				}
+
+			}
 
 		}
 
@@ -718,12 +745,14 @@ Object.assign( Object3D.prototype, EventDispatcher.prototype, {
 			var textures = extractFromCache( meta.textures );
 			var images = extractFromCache( meta.images );
             var videos = extractFromCache( meta.videos );
+			var shapes = extractFromCache( meta.shapes );
 
 			if ( geometries.length > 0 ) output.geometries = geometries;
 			if ( materials.length > 0 ) output.materials = materials;
 			if ( textures.length > 0 ) output.textures = textures;
 			if ( images.length > 0 ) output.images = images;
             if ( videos.length > 0 ) output.videos = videos;
+			if ( shapes.length > 0 ) output.shapes = shapes;
 
 		}
 

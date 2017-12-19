@@ -31,6 +31,7 @@ import { LineSegments } from '../objects/LineSegments';
 import { LOD } from '../objects/LOD';
 import { Mesh } from '../objects/Mesh';
 import { SkinnedMesh } from '../objects/SkinnedMesh';
+import { Shape } from '../extras/core/Shape.js';
 import { Fog } from '../scenes/Fog';
 import { FogExp2 } from '../scenes/FogExp2';
 import { HemisphereLight } from '../lights/HemisphereLight';
@@ -124,7 +125,8 @@ Object.assign( ObjectLoader.prototype, {
 
 	parse: function ( json, onLoad ) {
 
-		var geometries = this.parseGeometries( json.geometries );
+		var shapes = this.parseShape( json.shapes );
+		var geometries = this.parseGeometries( json.geometries, shapes );
 
 		var images = this.parseImages( json.images, function () {
 
@@ -157,7 +159,27 @@ Object.assign( ObjectLoader.prototype, {
 
 	},
 
-	parseGeometries: function ( json ) {
+	parseShape: function ( json ) {
+
+		var shapes = {};
+
+		if ( json !== undefined ) {
+
+			for ( var i = 0, l = json.length; i < l; i ++ ) {
+
+				var shape = new Shape().fromJSON( json[ i ] );
+
+				shapes[ shape.uuid ] = shape;
+
+			}
+
+		}
+
+		return shapes;
+
+	},
+
+	parseGeometries: function ( json, shapes ) {
 
 		var geometries = {};
 
@@ -323,6 +345,38 @@ Object.assign( ObjectLoader.prototype, {
 
 						break;
 
+					case 'PolyhedronGeometry':
+					case 'PolyhedronBufferGeometry':
+
+						geometry = new Geometries[ data.type ](
+							data.vertices,
+							data.indices,
+							data.radius,
+							data.details
+						);
+
+						break;
+
+					case 'ShapeGeometry':
+					case 'ShapeBufferGeometry':
+
+						var geometryShapes = [];
+
+						for ( var i = 0, l = data.shapes.length; i < l; i ++ ) {
+
+							var shape = shapes[ data.shapes[ i ] ];
+
+							geometryShapes.push( shape );
+
+						}
+
+						geometry = new Geometries[ data.type ](
+							geometryShapes,
+							data.curveSegments
+						);
+
+						break;
+
 					case 'BufferGeometry':
 
 						geometry = bufferGeometryLoader.parse( data );
@@ -334,6 +388,14 @@ Object.assign( ObjectLoader.prototype, {
 						geometry = geometryLoader.parse( data, this.texturePath ).geometry;
 
 						break;
+					
+					case 'TextGeometry':
+						geometry = new Geometries[ data.type ](
+							data.text,
+							data.parameters
+						);
+						break;
+					
 
 					default:
 
@@ -862,69 +924,11 @@ Object.assign( ObjectLoader.prototype, {
 			}
 			
 			if ( data.children !== undefined ) {
-				for ( var child in data.children ) {
-					let childData = data.children[ child ];
-					if(childData.userData !== undefined && childData.userData.subType === "block"){
-						var material = getMaterial( childData.material );
-						var textParams = childData.userData.textParams;
-						
-						var height = 30, hover = 30, curveSegments = 3,
-							bevelThickness = 2, bevelSize = 1.5, bevelSegments = 3,
-							bevelEnabled = true, font = undefined
-
-						var loader = new THREE.FontLoader();
-						loader.load( 'examples/fonts/' + textParams.fontFace + '_' + textParams.fontWeight + '.typeface.json', function ( response ) {
-							font = response;
-							var textGeo = new THREE.TextGeometry( textParams.text, {
-								font: font,
-								size: textParams.fontSize,
-								height: height,
-								curveSegments: curveSegments,
-								bevelThickness: bevelThickness,
-								bevelSize: bevelSize,
-								bevelEnabled: bevelEnabled,
-								material: 0,
-								extrudeMaterial: 0
-							});
-
-							textGeo.computeBoundingBox();
-							textGeo.computeVertexNormals();
-
-							if ( ! bevelEnabled ) {
-								var triangleAreaHeuristics = 0.1 * ( height * size );
-								for ( var i = 0; i < textGeo.faces.length; i ++ ) {
-									var face = textGeo.faces[ i ];
-									if ( face.materialIndex == 1 ) {
-										for ( var j = 0; j < face.vertexNormals.length; j ++ ) {
-											face.vertexNormals[ j ].z = 0;
-											face.vertexNormals[ j ].normalize();
-										}
-										var va = textGeo.vertices[ face.a ];
-										var vb = textGeo.vertices[ face.b ];
-										var vc = textGeo.vertices[ face.c ];
-										var s = THREE.GeometryUtils.triangleArea( va, vb, vc );
-										if ( s > triangleAreaHeuristics ) {
-											for ( var j = 0; j < face.vertexNormals.length; j ++ ) {
-												face.vertexNormals[ j ].copy( face.normal );
-											}
-										}
-									}
-								}
-							}
-							var textMesh = new THREE.Mesh( textGeo, material );
-							matrix.fromArray( childData.matrix );
-							matrix.decompose( textMesh.position, textMesh.quaternion, textMesh.scale );
-							textMesh.name = childData.name;
-							textMesh.renderOrder = childData.renderOrder;
-							textMesh.userData = childData.userData;
-							textMesh.uuid = childData.uuid;
-							editor.scene.add(textMesh);
-						});
-					}
-					else{
-						object.add( this.parseObject( childData, geometries, materials ) );
-					}    
+				var children = data.children;
+				for ( var i = 0; i < children.length; i ++ ) {
+					object.add( this.parseObject( children[ i ], geometries, materials ) );
 				}
+				
 			}
                 
             if( data.userData !== undefined && data.userData.isStereo === true )

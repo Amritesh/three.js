@@ -20,6 +20,8 @@ Object.assign( ImageLoader.prototype, {
 
 		if ( this.path !== undefined ) url = this.path + url;
 
+		url = this.manager.resolveURL( url );
+
 		var scope = this;
 
 		var cached = Cache.get( url );

@@ -18,41 +18,41 @@ import {
 	LinearFilter,
 	LinearMipMapNearestFilter,
 	LinearMipMapLinearFilter
-} from '../constants';
-import { Color } from '../math/Color';
-import { Matrix4 } from '../math/Matrix4';
-import { Object3D } from '../core/Object3D';
-import { Group } from '../objects/Group';
-import { Sprite } from '../objects/Sprite';
-import { Points } from '../objects/Points';
-import { Line } from '../objects/Line';
-import { LineLoop } from '../objects/LineLoop';
-import { LineSegments } from '../objects/LineSegments';
-import { LOD } from '../objects/LOD';
-import { Mesh } from '../objects/Mesh';
-import { SkinnedMesh } from '../objects/SkinnedMesh';
+} from '../constants.js';
+import { Color } from '../math/Color.js';
+import { Object3D } from '../core/Object3D.js';
+import { Group } from '../objects/Group.js';
+import { Sprite } from '../objects/Sprite.js';
+import { Points } from '../objects/Points.js';
+import { Line } from '../objects/Line.js';
+import { LineLoop } from '../objects/LineLoop.js';
+import { LineSegments } from '../objects/LineSegments.js';
+import { LOD } from '../objects/LOD.js';
+import { Mesh } from '../objects/Mesh.js';
+import { SkinnedMesh } from '../objects/SkinnedMesh.js';
 import { Shape } from '../extras/core/Shape.js';
-import { Fog } from '../scenes/Fog';
-import { FogExp2 } from '../scenes/FogExp2';
-import { HemisphereLight } from '../lights/HemisphereLight';
-import { SpotLight } from '../lights/SpotLight';
-import { PointLight } from '../lights/PointLight';
-import { DirectionalLight } from '../lights/DirectionalLight';
-import { AmbientLight } from '../lights/AmbientLight';
-import { RectAreaLight } from '../lights/RectAreaLight';
-import { OrthographicCamera } from '../cameras/OrthographicCamera';
-import { PerspectiveCamera } from '../cameras/PerspectiveCamera';
-import { Scene } from '../scenes/Scene';
-import { Texture } from '../textures/Texture';
-import { VideoTexture } from '../textures/VideoTexture';
-import { ImageLoader } from './ImageLoader';
-import { LoadingManager, DefaultLoadingManager } from './LoadingManager';
-import { AnimationClip } from '../animation/AnimationClip';
-import { MaterialLoader } from './MaterialLoader';
-import { BufferGeometryLoader } from './BufferGeometryLoader';
-import { JSONLoader } from './JSONLoader';
-import { FileLoader } from './FileLoader';
-import * as Geometries from '../geometries/Geometries';
+import { Fog } from '../scenes/Fog.js';
+import { FogExp2 } from '../scenes/FogExp2.js';
+import { HemisphereLight } from '../lights/HemisphereLight.js';
+import { SpotLight } from '../lights/SpotLight.js';
+import { PointLight } from '../lights/PointLight.js';
+import { DirectionalLight } from '../lights/DirectionalLight.js';
+import { AmbientLight } from '../lights/AmbientLight.js';
+import { RectAreaLight } from '../lights/RectAreaLight.js';
+import { OrthographicCamera } from '../cameras/OrthographicCamera.js';
+import { PerspectiveCamera } from '../cameras/PerspectiveCamera.js';
+import { Scene } from '../scenes/Scene.js';
+import { CubeTexture } from '../textures/CubeTexture.js';
+import { Texture } from '../textures/Texture.js';
+import { ImageLoader } from './ImageLoader.js';
+import { LoadingManager, DefaultLoadingManager } from './LoadingManager.js';
+import { AnimationClip } from '../animation/AnimationClip.js';
+import { MaterialLoader } from './MaterialLoader.js';
+import { BufferGeometryLoader } from './BufferGeometryLoader.js';
+import { JSONLoader } from './JSONLoader.js';
+import { FileLoader } from './FileLoader.js';
+import * as Geometries from '../geometries/Geometries.js';
+import * as Curves from '../extras/curves/Curves.js';
 
 /**
  * @author mrdoob / http://mrdoob.com/
@@ -66,6 +66,8 @@ function ObjectLoader( manager ) {
 }
 
 Object.assign( ObjectLoader.prototype, {
+
+	crossOrigin: 'anonymous',
 
 	load: function ( url, onLoad, onProgress, onError ) {
 
@@ -114,12 +116,14 @@ Object.assign( ObjectLoader.prototype, {
 	setTexturePath: function ( value ) {
 
 		this.texturePath = value;
+		return this;
 
 	},
 
 	setCrossOrigin: function ( value ) {
 
 		this.crossOrigin = value;
+		return this;
 
 	},
 
@@ -133,12 +137,14 @@ Object.assign( ObjectLoader.prototype, {
 			if ( onLoad !== undefined ) onLoad( object );
 
 		} );
-        
-        var videos = this.parseVideos( json.videos, function() {
-            if (onLoad !== undefined) onLoad(object);
-        } );
 
-		var textures  = this.parseTextures( json.textures, images , videos);
+		var videos = this.parseVideos( json.videos, function () {
+
+			if ( onLoad !== undefined ) onLoad( object );
+
+		} );
+
+		var textures = this.parseTextures( json.textures, images, videos );
 		var materials = this.parseMaterials( json.materials, textures );
 
 		var object = this.parseObject( json.object, geometries, materials );
@@ -362,9 +368,9 @@ Object.assign( ObjectLoader.prototype, {
 
 						var geometryShapes = [];
 
-						for ( var i = 0, l = data.shapes.length; i < l; i ++ ) {
+						for ( var j = 0, jl = data.shapes.length; j < jl; j ++ ) {
 
-							var shape = shapes[ data.shapes[ i ] ];
+							var shape = shapes[ data.shapes[ j ] ];
 
 							geometryShapes.push( shape );
 
@@ -373,6 +379,35 @@ Object.assign( ObjectLoader.prototype, {
 						geometry = new Geometries[ data.type ](
 							geometryShapes,
 							data.curveSegments
+						);
+
+						break;
+
+
+					case 'ExtrudeGeometry':
+					case 'ExtrudeBufferGeometry':
+
+						var geometryShapes = [];
+
+						for ( var j = 0, jl = data.shapes.length; j < jl; j ++ ) {
+
+							var shape = shapes[ data.shapes[ j ] ];
+
+							geometryShapes.push( shape );
+
+						}
+
+						var extrudePath = data.options.extrudePath;
+
+						if ( extrudePath !== undefined ) {
+
+							data.options.extrudePath = new Curves[ extrudePath.type ]().fromJSON( extrudePath );
+
+						}
+
+						geometry = new Geometries[ data.type ](
+							geometryShapes,
+							data.options
 						);
 
 						break;
@@ -388,14 +423,14 @@ Object.assign( ObjectLoader.prototype, {
 						geometry = geometryLoader.parse( data, this.texturePath ).geometry;
 
 						break;
-					
+
 					// case 'TextGeometry':
 					// 	geometry = new Geometries[ data.type ](
 					// 		data.text,
 					// 		data.parameters
 					// 	);
 					// 	break;
-					
+
 
 					default:
 
@@ -408,6 +443,7 @@ Object.assign( ObjectLoader.prototype, {
 				geometry.uuid = data.uuid;
 
 				if ( data.name !== undefined ) geometry.name = data.name;
+				if ( geometry.isBufferGeometry === true && data.userData !== undefined ) geometry.userData = data.userData;
 
 				geometries[ data.uuid ] = geometry;
 
@@ -466,7 +502,11 @@ Object.assign( ObjectLoader.prototype, {
 
 		for ( var i = 0; i < json.length; i ++ ) {
 
-			var clip = AnimationClip.parse( json[ i ] );
+			var data = json[ i ];
+
+			var clip = AnimationClip.parse( data );
+
+			if ( data.uuid !== undefined ) clip.uuid = data.uuid;
 
 			animations.push( clip );
 
@@ -505,25 +545,53 @@ Object.assign( ObjectLoader.prototype, {
 			var loader = new ImageLoader( manager );
 			loader.setCrossOrigin( "anonymous" );
 
-			for ( var i = 0, l = json.length; i < l; i ++ ) {
+			for ( var i = 0, il = json.length; i < il; i ++ ) {
 
 				var image = json[ i ];
-                var name = image.name;
-				var path = /^(\/\/)|([a-z]+:(\/\/)?)/i.test( image.url ) ? image.url : scope.texturePath + image.url;
+				var uuid = image.uuid;
+				var url = image.url;
 
-				let uuid = image.uuid;
-				images[uuid] = loadImage(name, path);
-				images[uuid].setAttribute('available', 'false');
-				images[uuid].onload = function (uuid) {
-					this.setAttribute('available', 'true');
+				if ( Array.isArray( url ) ) {
 
-					/*BIG HACK!!! Remove from here asap */
-					if (editor && editor.timeliner)
-						editor.timeliner.repaint();
+					// load array of images e.g CubeTexture
+
+					images[ image.uuid ] = [];
+
+					for ( var j = 0, jl = url.length; j < jl; j ++ ) {
+
+						var currentUrl = url[ j ];
+
+						var path = /^(\/\/)|([a-z]+:(\/\/)?)/i.test( currentUrl ) ? currentUrl : scope.texturePath + currentUrl;
+
+						images[ image.uuid ].push( loadImage( path ) );
+
+					}
+
+				} else {
+
+					// load single image
+
+					var path = /^(\/\/)|([a-z]+:(\/\/)?)/i.test( image.url ) ? image.url : scope.texturePath + image.url;
+
+					images[ image.uuid ] = loadImage( path );
+
+					images[ uuid ].setAttribute( 'available', 'false' );
+					images[ uuid ].onload = function ( uuid ) {
+
+						this.setAttribute( 'available', 'true' );
+						/*BIG HACK!!! Remove from here asap */
+						if ( editor && editor.timeliner )
+							editor.timeliner.repaint();
+
+					};
+					images[ uuid ].onerror = function () {
+
+						this.setAttribute( 'network-error', 'true' );
+
+					};
+
 				}
-				images[uuid].onerror = function () {
-					this.setAttribute('network-error', 'true');
-				}
+
 			}
 
 		}
@@ -531,35 +599,43 @@ Object.assign( ObjectLoader.prototype, {
 		return images;
 
 	},
-    
-    parseVideos: function ( json, onLoad ) {
+
+	parseVideos: function ( json, onLoad ) {
 
 		var scope = this;
 		var videos = {};
 
 		function loadVideo( url ) {
-			var videos =[document.createElement('video'), document.createElement('video')];
-			_.forEach(videos, function(video){
-				video.setAttribute("style", "display:none");
-				video.setAttribute('crossorigin', 'anonymous');
-				video.setAttribute('available', 'false');
+
+			var videos = [ document.createElement( 'video' ), document.createElement( 'video' ) ];
+			_.forEach( videos, function ( video ) {
+
+				video.setAttribute( "style", "display:none" );
+				video.setAttribute( 'crossorigin', 'anonymous' );
+				video.setAttribute( 'available', 'false' );
 				video.autobuffer = true;
 				video.preload = "auto";
 				video.src = url;
 				video.onloadedmetadata = function () {
-					this.setAttribute('available', 'true');
+
+					this.setAttribute( 'available', 'true' );
 					/*BIG HACK!!! Remove from here asap */
-					if (editor && editor.timeliner)
+					if ( editor && editor.timeliner )
 						editor.timeliner.repaint();
-					if (window.ui && ui.angular)
+					if ( window.ui && ui.angular )
 						ui.angular.$rootScope.$digest();
-				}
+
+				};
 				video.onerror = function () {
-					this.setAttribute('network-error', 'true');
-				}
-				document.body.appendChild(video);
-			});
+
+					this.setAttribute( 'network-error', 'true' );
+
+				};
+				document.body.appendChild( video );
+
+			} );
 			return videos;
+
 		}
 
 		if ( json !== undefined && json.length > 0 ) {
@@ -589,7 +665,7 @@ Object.assign( ObjectLoader.prototype, {
 
 		function parseConstant( value, type ) {
 
-			if ( typeof( value ) === 'number' ) return value;
+			if ( typeof ( value ) === 'number' ) return value;
 
 			console.warn( 'THREE.ObjectLoader.parseTexture: Constant should be in numeric form.', value );
 
@@ -605,7 +681,7 @@ Object.assign( ObjectLoader.prototype, {
 
 				var data = json[ i ];
 
-				if ( data.image === undefined && data.video === undefined) {
+				if ( data.image === undefined && data.video === undefined ) {
 
 					console.warn( 'THREE.ObjectLoader: No "image" or "video" specified for', data.uuid );
 
@@ -617,16 +693,29 @@ Object.assign( ObjectLoader.prototype, {
 
 				}
 
-				if( data.image !== undefined)
-                {
-                    var texture = new Texture( images[ data.image ] );
-                }
-                if( data.video !== undefined)
-                {
-                    var texture = new VideoTexture(videos[ data.video ][0]);
-					videos[ data.video ][0].className = data.uuid+" active";
-					videos[ data.video ][1].className = data.uuid+" dormant";
-                }
+				var texture;
+
+				if ( Array.isArray( images[ data.image ] ) ) {
+
+					texture = new CubeTexture( images[ data.image ] );
+
+				} else {
+
+					if ( data.image !== undefined ) {
+
+						var texture = new Texture( images[ data.image ] );
+
+					}
+					if ( data.video !== undefined ) {
+
+						var texture = new VideoTexture( videos[ data.video ][ 0 ] );
+						videos[ data.video ][ 0 ].className = data.uuid + " active";
+						videos[ data.video ][ 1 ].className = data.uuid + " dormant";
+
+					}
+
+				}
+
 				texture.needsUpdate = true;
 
 				texture.uuid = data.uuid;
@@ -644,6 +733,8 @@ Object.assign( ObjectLoader.prototype, {
 
 				}
 
+				if ( data.format !== undefined ) texture.format = data.format;
+
 				if ( data.minFilter !== undefined ) texture.minFilter = parseConstant( data.minFilter, TEXTURE_FILTER );
 				if ( data.magFilter !== undefined ) texture.magFilter = parseConstant( data.magFilter, TEXTURE_FILTER );
 				if ( data.anisotropy !== undefined ) texture.anisotropy = data.anisotropy;
@@ -660,329 +751,347 @@ Object.assign( ObjectLoader.prototype, {
 
 	},
 
-	parseObject: function () {
+	parseObject: function ( data, geometries, materials ) {
 
-		var matrix = new Matrix4();
+		var object;
 
-		return function parseObject( data, geometries, materials ) {
+		function getGeometry( name ) {
 
-			var object;
+			if ( geometries[ name ] === undefined ) {
 
-			function getGeometry( name ) {
-
-				if ( geometries[ name ] === undefined ) {
-
-					console.warn( 'THREE.ObjectLoader: Undefined geometry', name );
-
-				}
-
-				return geometries[ name ];
+				console.warn( 'THREE.ObjectLoader: Undefined geometry', name );
 
 			}
 
-			function getMaterial( name ) {
+			return geometries[ name ];
 
-				if ( name === undefined ) return undefined;
+		}
 
-				if ( Array.isArray( name ) ) {
+		function getMaterial( name ) {
 
-					var array = [];
+			if ( name === undefined ) return undefined;
 
-					for ( var i = 0, l = name.length; i < l; i ++ ) {
+			if ( Array.isArray( name ) ) {
 
-						var uuid = name[ i ];
+				var array = [];
 
-						if ( materials[ uuid ] === undefined ) {
+				for ( var i = 0, l = name.length; i < l; i ++ ) {
 
-							console.warn( 'THREE.ObjectLoader: Undefined material', uuid );
+					var uuid = name[ i ];
 
-						}
+					if ( materials[ uuid ] === undefined ) {
 
-						array.push( materials[ uuid ] );
+						console.warn( 'THREE.ObjectLoader: Undefined material', uuid );
 
 					}
 
-					return array;
+					array.push( materials[ uuid ] );
 
 				}
 
-				if ( materials[ name ] === undefined ) {
-
-					console.warn( 'THREE.ObjectLoader: Undefined material', name );
-
-				}
-
-				return materials[ name ];
+				return array;
 
 			}
 
-			switch ( data.type ) {
+			if ( materials[ name ] === undefined ) {
 
-				case 'Scene':
+				console.warn( 'THREE.ObjectLoader: Undefined material', name );
 
-					object = new Scene();
+			}
 
-					if ( data.background !== undefined ) {
+			return materials[ name ];
 
-						if ( Number.isInteger( data.background ) ) {
+		}
 
-							object.background = new Color( data.background );
+		switch ( data.type ) {
 
-						}
+			case 'Scene':
+
+				object = new Scene();
+
+				if ( data.background !== undefined ) {
+
+					if ( Number.isInteger( data.background ) ) {
+
+						object.background = new Color( data.background );
 
 					}
 
-					if ( data.fog !== undefined ) {
+				}
 
-						if ( data.fog.type === 'Fog' ) {
+				if ( data.fog !== undefined ) {
 
-							object.fog = new Fog( data.fog.color, data.fog.near, data.fog.far );
+					if ( data.fog.type === 'Fog' ) {
 
-						} else if ( data.fog.type === 'FogExp2' ) {
+						object.fog = new Fog( data.fog.color, data.fog.near, data.fog.far );
 
-							object.fog = new FogExp2( data.fog.color, data.fog.density );
+					} else if ( data.fog.type === 'FogExp2' ) {
 
-						}
+						object.fog = new FogExp2( data.fog.color, data.fog.density );
 
 					}
 
 					if ( data.transitions !== undefined ) {
+
 						object.transitions = data.transitions;
-					}
-
-					break;
-
-				case 'PerspectiveCamera':
-
-					object = new PerspectiveCamera( data.fov, data.aspect, data.near, data.far );
-
-					if ( data.focus !== undefined ) object.focus = data.focus;
-					if ( data.zoom !== undefined ) object.zoom = data.zoom;
-					if ( data.filmGauge !== undefined ) object.filmGauge = data.filmGauge;
-					if ( data.filmOffset !== undefined ) object.filmOffset = data.filmOffset;
-					if ( data.view !== undefined ) object.view = Object.assign( {}, data.view );
-
-					break;
-
-				case 'OrthographicCamera':
-
-					object = new OrthographicCamera( data.left, data.right, data.top, data.bottom, data.near, data.far );
-
-					break;
-
-				case 'AmbientLight':
-
-					object = new AmbientLight( data.color, data.intensity );
-
-					break;
-
-				case 'DirectionalLight':
-
-					object = new DirectionalLight( data.color, data.intensity );
-
-					break;
-
-				case 'PointLight':
-
-					object = new PointLight( data.color, data.intensity, data.distance, data.decay );
-
-					break;
-
-				case 'RectAreaLight':
-
-					object = new RectAreaLight( data.color, data.intensity, data.width, data.height );
-
-					break;
-
-				case 'SpotLight':
-
-					object = new SpotLight( data.color, data.intensity, data.distance, data.angle, data.penumbra, data.decay );
-
-					break;
-
-				case 'HemisphereLight':
-
-					object = new HemisphereLight( data.color, data.groundColor, data.intensity );
-
-					break;
-
-				case 'SkinnedMesh':
-
-					console.warn( 'THREE.ObjectLoader.parseObject() does not support SkinnedMesh yet.' );
-
-				case 'Mesh':
-
-					var geometry = getGeometry( data.geometry );
-					var material = getMaterial( data.material );
-
-					if ( geometry && geometry.bones && geometry.bones.length > 0 ) {
-
-						object = new SkinnedMesh( geometry, material );
-
-					} else {
-
-						object = new Mesh( geometry, material );
-
-					}
-
-					break;
-
-				case 'LOD':
-
-					object = new LOD();
-
-					break;
-
-				case 'Line':
-
-					object = new Line( getGeometry( data.geometry ), getMaterial( data.material ), data.mode );
-
-					break;
-
-				case 'LineLoop':
-
-					object = new LineLoop( getGeometry( data.geometry ), getMaterial( data.material ) );
-
-					break;
-
-				case 'LineSegments':
-
-					object = new LineSegments( getGeometry( data.geometry ), getMaterial( data.material ) );
-
-					break;
-
-				case 'PointCloud':
-				case 'Points':
-
-					object = new Points( getGeometry( data.geometry ), getMaterial( data.material ) );
-
-					break;
-
-				case 'Sprite':
-
-					object = new Sprite( getMaterial( data.material ) );
-
-					break;
-
-				case 'Group':
-
-					object = new Group();
-
-					break;
-
-				default:
-
-					object = new Object3D();
-
-			}
-
-			object.uuid = data.uuid;
-
-			if ( data.name !== undefined ) object.name = data.name;
-			if ( data.renderOrder !== undefined ) object.renderOrder = data.renderOrder;
-			if ( data.matrix !== undefined ) {
-
-				matrix.fromArray( data.matrix );
-				matrix.decompose( object.position, object.quaternion, object.scale );
-
-			} else {
-
-				if ( data.position !== undefined ) object.position.fromArray( data.position );
-				if ( data.rotation !== undefined ) object.rotation.fromArray( data.rotation );
-				if ( data.quaternion !== undefined ) object.quaternion.fromArray( data.quaternion );
-				if ( data.scale !== undefined ) object.scale.fromArray( data.scale );
-
-			}
-
-			if ( data.castShadow !== undefined ) object.castShadow = data.castShadow;
-			if ( data.receiveShadow !== undefined ) object.receiveShadow = data.receiveShadow;
-
-			if ( data.shadow ) {
-
-				if ( data.shadow.bias !== undefined ) object.shadow.bias = data.shadow.bias;
-				if ( data.shadow.radius !== undefined ) object.shadow.radius = data.shadow.radius;
-				if ( data.shadow.mapSize !== undefined ) object.shadow.mapSize.fromArray( data.shadow.mapSize );
-				if ( data.shadow.camera !== undefined ) object.shadow.camera = this.parseObject( data.shadow.camera );
-
-			}
-
-			if ( data.visible !== undefined ) object.visible = data.visible;
-			if ( data.userData !== undefined ) object.userData = data.userData;
-
-			if( data.userData !== undefined && data.userData.type === "audio" ){
-				var url = data.userData.url_new;
-				var sound = document.createElement("audio");
-				sound.src = url;
-				sound.setAttribute('crossorigin', 'anonymous');
-				sound.onerror = function () {
-					sound.setAttribute('network-error', 'true');
-				}
-				sound.className = object.uuid;
-				document.body.appendChild(sound);
-			}
-			
-			if ( data.children !== undefined ) {
-				var children = data.children;
-				for ( var i = 0; i < children.length; i ++ ) {
-					if(children[ i ].userData && children[ i ].userData.info)
-						Objectck.addObject(children[ i ].userData.info,children[ i ],object).then(function(data){
-							if(data.parent.type === "Scene")
-								editor.execute(new AddObjectCommand(data.child));
-							else
-								data.parent.add(data.child);
-							ck.updateTotalTime();
-							profiler.object_profiler(data.child,0,0,true);
-							if(editor && editor.timeliner)
-								editor.timeliner.dispatcher.fire('controls.stop');
-						});
-					else
-						object.add( this.parseObject( children[ i ], geometries, materials ) );
-				}
-				
-			}
-                
-            if( data.userData !== undefined && data.userData.isStereo === true )
-            {
-                let p = {};
-                p.scaleX = p.scaleX || 1;
-                p.scaleY = p.scaleY || 0.5;
-                p.offsetX = p.offsetX || 0;
-                p.offsetY = p.offsetY || 0.5;
-                var uvs = object.geometry.faceVertexUvs[0];
-                for (let i = 0; data.userData.isStereo && i < uvs.length; i ++) {
-                    for (var j = 0; j < 3; j ++) {
-                        uvs[i][j].x *= p.scaleX;
-                        uvs[i][j].x += p.offsetX;
-                        uvs[i][j].y *= p.scaleY;
-                        uvs[i][j].y += p.offsetY;
-                    }
-                }
-            }
-            
-			if ( data.type === 'LOD' ) {
-
-				var levels = data.levels;
-
-				for ( var l = 0; l < levels.length; l ++ ) {
-
-					var level = levels[ l ];
-					var child = object.getObjectByProperty( 'uuid', level.object );
-
-					if ( child !== undefined ) {
-
-						object.addLevel( child, level.distance );
 
 					}
 
 				}
 
+				break;
+
+			case 'PerspectiveCamera':
+
+				object = new PerspectiveCamera( data.fov, data.aspect, data.near, data.far );
+
+				if ( data.focus !== undefined ) object.focus = data.focus;
+				if ( data.zoom !== undefined ) object.zoom = data.zoom;
+				if ( data.filmGauge !== undefined ) object.filmGauge = data.filmGauge;
+				if ( data.filmOffset !== undefined ) object.filmOffset = data.filmOffset;
+				if ( data.view !== undefined ) object.view = Object.assign( {}, data.view );
+
+				break;
+
+			case 'OrthographicCamera':
+
+				object = new OrthographicCamera( data.left, data.right, data.top, data.bottom, data.near, data.far );
+
+				if ( data.zoom !== undefined ) object.zoom = data.zoom;
+				if ( data.view !== undefined ) object.view = Object.assign( {}, data.view );
+
+				break;
+
+			case 'AmbientLight':
+
+				object = new AmbientLight( data.color, data.intensity );
+
+				break;
+
+			case 'DirectionalLight':
+
+				object = new DirectionalLight( data.color, data.intensity );
+
+				break;
+
+			case 'PointLight':
+
+				object = new PointLight( data.color, data.intensity, data.distance, data.decay );
+
+				break;
+
+			case 'RectAreaLight':
+
+				object = new RectAreaLight( data.color, data.intensity, data.width, data.height );
+
+				break;
+
+			case 'SpotLight':
+
+				object = new SpotLight( data.color, data.intensity, data.distance, data.angle, data.penumbra, data.decay );
+
+				break;
+
+			case 'HemisphereLight':
+
+				object = new HemisphereLight( data.color, data.groundColor, data.intensity );
+
+				break;
+
+			case 'SkinnedMesh':
+
+				console.warn( 'THREE.ObjectLoader.parseObject() does not support SkinnedMesh yet.' );
+
+			case 'Mesh':
+
+				var geometry = getGeometry( data.geometry );
+				var material = getMaterial( data.material );
+
+				if ( geometry && geometry.bones && geometry.bones.length > 0 ) {
+
+					object = new SkinnedMesh( geometry, material );
+
+				} else {
+
+					object = new Mesh( geometry, material );
+
+				}
+
+				break;
+
+			case 'LOD':
+
+				object = new LOD();
+
+				break;
+
+			case 'Line':
+
+				object = new Line( getGeometry( data.geometry ), getMaterial( data.material ), data.mode );
+
+				break;
+
+			case 'LineLoop':
+
+				object = new LineLoop( getGeometry( data.geometry ), getMaterial( data.material ) );
+
+				break;
+
+			case 'LineSegments':
+
+				object = new LineSegments( getGeometry( data.geometry ), getMaterial( data.material ) );
+
+				break;
+
+			case 'PointCloud':
+			case 'Points':
+
+				object = new Points( getGeometry( data.geometry ), getMaterial( data.material ) );
+
+				break;
+
+			case 'Sprite':
+
+				object = new Sprite( getMaterial( data.material ) );
+
+				break;
+
+			case 'Group':
+
+				object = new Group();
+
+				break;
+
+			default:
+
+				object = new Object3D();
+
+		}
+
+		object.uuid = data.uuid;
+
+		if ( data.name !== undefined ) object.name = data.name;
+		if ( data.matrix !== undefined ) {
+
+			object.matrix.fromArray( data.matrix );
+
+			if ( data.matrixAutoUpdate !== undefined ) object.matrixAutoUpdate = data.matrixAutoUpdate;
+			if ( object.matrixAutoUpdate ) object.matrix.decompose( object.position, object.quaternion, object.scale );
+
+		} else {
+
+			if ( data.position !== undefined ) object.position.fromArray( data.position );
+			if ( data.rotation !== undefined ) object.rotation.fromArray( data.rotation );
+			if ( data.quaternion !== undefined ) object.quaternion.fromArray( data.quaternion );
+			if ( data.scale !== undefined ) object.scale.fromArray( data.scale );
+
+		}
+
+		if ( data.castShadow !== undefined ) object.castShadow = data.castShadow;
+		if ( data.receiveShadow !== undefined ) object.receiveShadow = data.receiveShadow;
+
+		if ( data.shadow ) {
+
+			if ( data.shadow.bias !== undefined ) object.shadow.bias = data.shadow.bias;
+			if ( data.shadow.radius !== undefined ) object.shadow.radius = data.shadow.radius;
+			if ( data.shadow.mapSize !== undefined ) object.shadow.mapSize.fromArray( data.shadow.mapSize );
+			if ( data.shadow.camera !== undefined ) object.shadow.camera = this.parseObject( data.shadow.camera );
+
+		}
+
+		if ( data.visible !== undefined ) object.visible = data.visible;
+		if ( data.frustumCulled !== undefined ) object.frustumCulled = data.frustumCulled;
+		if ( data.renderOrder !== undefined ) object.renderOrder = data.renderOrder;
+		if ( data.userData !== undefined ) object.userData = data.userData;
+		if ( data.layers !== undefined ) object.layers.mask = data.layers;
+
+
+		if ( data.userData !== undefined && data.userData.type === "audio" ) {
+
+			var url = data.userData.url_new;
+			var sound = document.createElement( "audio" );
+			sound.src = url;
+			sound.setAttribute( 'crossorigin', 'anonymous' );
+			sound.onerror = function () {
+
+				sound.setAttribute( 'network-error', 'true' );
+
+			};
+			sound.className = object.uuid;
+			document.body.appendChild( sound );
+
+		}
+
+		if ( data.children !== undefined ) {
+
+			var children = data.children;
+			for ( var i = 0; i < children.length; i ++ ) {
+
+				if ( children[ i ].userData && children[ i ].userData.info )
+					Objectck.addObject( children[ i ].userData.info, children[ i ], object ).then( function ( data ) {
+
+						if ( data.parent.type === "Scene" )
+							editor.execute( new AddObjectCommand( data.child ) );
+						else
+							data.parent.add( data.child );
+						ck.updateTotalTime();
+						profiler.object_profiler( data.child, 0, 0, true );
+						if ( editor && editor.timeliner )
+							editor.timeliner.dispatcher.fire( 'controls.stop' );
+
+					} );
+				else
+					object.add( this.parseObject( children[ i ], geometries, materials ) );
+
 			}
 
-			return object;
+		}
 
-		};
+		if ( data.userData !== undefined && data.userData.isStereo === true ) {
 
-	}()
+			let p = {};
+			p.scaleX = p.scaleX || 1;
+			p.scaleY = p.scaleY || 0.5;
+			p.offsetX = p.offsetX || 0;
+			p.offsetY = p.offsetY || 0.5;
+			var uvs = object.geometry.faceVertexUvs[ 0 ];
+			for ( let i = 0; data.userData.isStereo && i < uvs.length; i ++ ) {
+
+				for ( var j = 0; j < 3; j ++ ) {
+
+					uvs[ i ][ j ].x *= p.scaleX;
+					uvs[ i ][ j ].x += p.offsetX;
+					uvs[ i ][ j ].y *= p.scaleY;
+					uvs[ i ][ j ].y += p.offsetY;
+
+				}
+
+			}
+
+		}
+
+		if ( data.type === 'LOD' ) {
+
+			var levels = data.levels;
+
+			for ( var l = 0; l < levels.length; l ++ ) {
+
+				var level = levels[ l ];
+				var child = object.getObjectByProperty( 'uuid', level.object );
+
+				if ( child !== undefined ) {
+
+					object.addLevel( child, level.distance );
+
+				}
+
+			}
+
+		}
+
+		return object;
+
+	}
 
 } );
 

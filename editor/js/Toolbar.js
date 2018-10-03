@@ -8,6 +8,7 @@ var Toolbar = function ( editor ) {
 
 	var container = new UI.Panel();
 	container.setId( 'toolbar' );
+	container.setDisplay( 'none' );
 
 	var buttons = new UI.Panel();
 	container.add( buttons );
@@ -15,7 +16,6 @@ var Toolbar = function ( editor ) {
 	// translate / rotate / scale
 
 	var translate = new UI.Button( 'translate' );
-	translate.dom.title = 'W';
 	translate.dom.className = 'Button selected';
 	translate.onClick( function () {
 
@@ -25,7 +25,6 @@ var Toolbar = function ( editor ) {
 	buttons.add( translate );
 
 	var rotate = new UI.Button( 'rotate' );
-	rotate.dom.title = 'E';
 	rotate.onClick( function () {
 
 		signals.transformModeChanged.dispatch( 'rotate' );
@@ -34,13 +33,28 @@ var Toolbar = function ( editor ) {
 	buttons.add( rotate );
 
 	var scale = new UI.Button( 'scale' );
-	scale.dom.title = 'R';
 	scale.onClick( function () {
 
 		signals.transformModeChanged.dispatch( 'scale' );
 
 	} );
 	buttons.add( scale );
+
+	var local = new UI.THREE.Boolean( false, 'local' );
+	local.onChange( function () {
+
+		signals.spaceChanged.dispatch( this.getValue() === true ? 'local' : 'world' );
+
+	} );
+	buttons.add( local );
+
+	//
+
+	signals.objectSelected.add( function ( object ) {
+
+		container.setDisplay( object === null ? 'none' : '' );
+
+	} );
 
 	signals.transformModeChanged.add( function ( mode ) {
 
@@ -57,29 +71,6 @@ var Toolbar = function ( editor ) {
 		}
 
 	} );
-
-	// grid
-
-	var grid = new UI.Number( 25 ).setWidth( '40px' ).onChange( update );
-	buttons.add( new UI.Text( 'grid: ' ) );
-	buttons.add( grid );
-
-	var snap = new UI.THREE.Boolean( false, 'snap' ).onChange( update );
-	buttons.add( snap );
-
-	var local = new UI.THREE.Boolean( false, 'local' ).onChange( update );
-	buttons.add( local );
-
-	var showGrid = new UI.THREE.Boolean( true, 'show' ).onChange( update );
-	buttons.add( showGrid );
-
-	function update() {
-
-		signals.snapChanged.dispatch( snap.getValue() === true ? grid.getValue() : null );
-		signals.spaceChanged.dispatch( local.getValue() === true ? "local" : "world" );
-		signals.showGridChanged.dispatch( showGrid.getValue() );
-
-	}
 
 	return container;
 

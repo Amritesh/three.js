@@ -105,7 +105,7 @@ Object.assign( JSONLoader.prototype, {
             hasFaceNormal, hasFaceVertexNormal,
             hasFaceColor, hasFaceVertexColor,
 
-            vertex, face, faceA, faceB, hex, normal,
+            vertex, face, faceA, faceB, hex, normal, color,
 
             uvLayer, uv, u, v,
 
@@ -380,6 +380,16 @@ Object.assign( JSONLoader.prototype, {
 
 				}
 
+			}
+
+			offset = 0;
+			if(colors){
+				zLength = colors.length;
+
+				while ( offset < zLength) {
+					color = new THREE.Color().fromArray(colors[offset ++ ]);
+					geometry.colors.push( color );
+				}
 			}
 
 		}

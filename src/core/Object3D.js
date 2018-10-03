@@ -310,6 +310,9 @@ Object3D.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 
 		return function lookAt( x, y, z ) {
 
+			if(!x)
+				return;
+
 			if ( x.isVector3 ) {
 
 				vector.copy( x );
@@ -671,7 +674,7 @@ Object3D.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 
 		}
 
-		if ( this.geometry !== undefined ) {
+		if ( this.geometry !== undefined && !this.userData.info && !this.userData.ignoreGeometry) {
 
 			object.geometry = serialize( meta.geometries, this.geometry );
 
@@ -701,7 +704,7 @@ Object3D.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 
 		}
 
-		if ( this.material !== undefined ) {
+		if ( this.geometry !== undefined && !this.userData.info && !this.userData.ignoreGeometry) {
 
 			if ( Array.isArray( this.material ) ) {
 
@@ -731,6 +734,8 @@ Object3D.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 
 			for ( var i = 0; i < this.children.length; i ++ ) {
 				if(this.type === "Scene" && _.isEmpty(this.children[i].userData))
+					continue;
+				if(this.userData.ignoreChildren)
 					continue;
 				object.children.push( this.children[ i ].toJSON( meta ).object );
 

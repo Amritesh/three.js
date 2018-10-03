@@ -176,7 +176,7 @@ function WebGL2Renderer( parameters ) {
 
 	return {
 		domElement: _canvas,
-
+		domContext: gl,
 		clear: clear,
 		setPixelRatio: setPixelRatio,
 		setSize: setSize,

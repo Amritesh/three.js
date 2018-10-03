@@ -389,12 +389,12 @@ Object.assign( ObjectLoader.prototype, {
 
 						break;
 					
-					case 'TextGeometry':
-						geometry = new Geometries[ data.type ](
-							data.text,
-							data.parameters
-						);
-						break;
+					// case 'TextGeometry':
+					// 	geometry = new Geometries[ data.type ](
+					// 		data.text,
+					// 		data.parameters
+					// 	);
+					// 	break;
 					
 
 					default:
@@ -485,7 +485,7 @@ Object.assign( ObjectLoader.prototype, {
 
 			scope.manager.itemStart( url );
 
-			return loader.load( name, url, function () {
+			return loader.load( url, function () {
 
 				scope.manager.itemEnd( url );
 
@@ -520,8 +520,6 @@ Object.assign( ObjectLoader.prototype, {
 					/*BIG HACK!!! Remove from here asap */
 					if (editor && editor.timeliner)
 						editor.timeliner.repaint();
-					if (window.ui && ui.angular)
-						ui.angular.$rootScope.$digest();
 				}
 				images[uuid].onerror = function () {
 					this.setAttribute('network-error', 'true');
@@ -817,7 +815,7 @@ Object.assign( ObjectLoader.prototype, {
 					var geometry = getGeometry( data.geometry );
 					var material = getMaterial( data.material );
 
-					if ( geometry.bones && geometry.bones.length > 0 ) {
+					if ( geometry && geometry.bones && geometry.bones.length > 0 ) {
 
 						object = new SkinnedMesh( geometry, material );
 
@@ -926,7 +924,19 @@ Object.assign( ObjectLoader.prototype, {
 			if ( data.children !== undefined ) {
 				var children = data.children;
 				for ( var i = 0; i < children.length; i ++ ) {
-					object.add( this.parseObject( children[ i ], geometries, materials ) );
+					if(children[ i ].userData && children[ i ].userData.info)
+						Objectck.addObject(children[ i ].userData.info,children[ i ],object).then(function(data){
+							if(data.parent.type === "Scene")
+								editor.execute(new AddObjectCommand(data.child));
+							else
+								data.parent.add(data.child);
+							ck.updateTotalTime();
+							profiler.object_profiler(data.child,0,0,true);
+							if(editor && editor.timeliner)
+								editor.timeliner.dispatcher.fire('controls.stop');
+						});
+					else
+						object.add( this.parseObject( children[ i ], geometries, materials ) );
 				}
 				
 			}

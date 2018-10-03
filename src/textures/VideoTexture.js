@@ -21,11 +21,6 @@ function VideoTexture( video, mapping, wrapS, wrapT, magFilter, minFilter, forma
 	}
 
     video.addEventListener( 'loadeddata', onLoaded, false );
-    // audioTimerLoop(update,33);
-    // webWorkerSetInterval(function(){
-    //     update();
-    // },33);    
-    this.update = update;
 }
 
 

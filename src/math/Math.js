@@ -140,7 +140,7 @@ var _Math = {
 
 	maxPowerOfTwo: function ( value ) {
 		
-		return Math.min(1024, _Math.nearestPowerOfTwo(value));
+		return Math.min(2048, _Math.floorPowerOfTwo(value));
 
 	},
 

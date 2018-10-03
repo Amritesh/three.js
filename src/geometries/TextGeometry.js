@@ -50,7 +50,8 @@ function TextBufferGeometry( text, parameters ) {
 	var font = parameters.font;
 
 	if ( ! ( font && font.isFont ) ) {
-		font = new THREE.Font(font.data);
+		//font = new THREE.Font(font.data);
+		return new Geometry();
 	}
 
 	var shapes = font.generateShapes( text, parameters.size, parameters.curveSegments );

@@ -1001,6 +1001,9 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 		data.type = this.type;
 		if ( this.name !== '' ) data.name = this.name;
 
+		if(data.type === "TextGeometry")
+				return data;
+
 		if ( this.parameters !== undefined ) {
 
 			var parameters = this.parameters;
@@ -1024,10 +1027,18 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 
 		}
 
+		var colors = [];
+
+		for ( var i = 0; i < this.colors.length; i ++ ) {
+			
+			var color = this.colors[ i ];
+			colors.push( color.toArray() );
+
+		}
+
 		var faces = [];
 		var normals = [];
 		var normalsHash = {};
-		var colors = [];
 		var colorsHash = {};
 		var uvs = [];
 		var uvsHash = {};

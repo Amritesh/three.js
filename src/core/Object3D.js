@@ -704,7 +704,7 @@ Object3D.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 
 		}
 
-		if ( this.geometry !== undefined && !this.userData.info && !this.userData.ignoreGeometry) {
+		if ( this.material !== undefined && !this.userData.info && !this.userData.ignoreMaterial) {
 
 			if ( Array.isArray( this.material ) ) {
 

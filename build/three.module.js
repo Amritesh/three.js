@@ -447,7 +447,7 @@ var _Math = {
 
 	maxPowerOfTwo: function ( value ) {
 		
-		return Math.min(1024, _Math.nearestPowerOfTwo(value));
+		return Math.min(2048, _Math.floorPowerOfTwo(value));
 
 	},
 
@@ -10489,6 +10489,9 @@ Object3D.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 
 		return function lookAt( x, y, z ) {
 
+			if(!x)
+				return;
+
 			if ( x.isVector3 ) {
 
 				vector.copy( x );
@@ -10850,7 +10853,7 @@ Object3D.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 
 		}
 
-		if ( this.geometry !== undefined ) {
+		if ( this.geometry !== undefined && !this.userData.info && !this.userData.ignoreGeometry) {
 
 			object.geometry = serialize( meta.geometries, this.geometry );
 
@@ -10880,7 +10883,7 @@ Object3D.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 
 		}
 
-		if ( this.material !== undefined ) {
+		if ( this.material !== undefined && !this.userData.info && !this.userData.ignoreMaterial) {
 
 			if ( Array.isArray( this.material ) ) {
 
@@ -10910,6 +10913,8 @@ Object3D.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 
 			for ( var i = 0; i < this.children.length; i ++ ) {
 				if(this.type === "Scene" && _.isEmpty(this.children[i].userData))
+					continue;
+				if(this.userData.ignoreChildren)
 					continue;
 				object.children.push( this.children[ i ].toJSON( meta ).object );
 
@@ -12265,6 +12270,9 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 		data.type = this.type;
 		if ( this.name !== '' ) data.name = this.name;
 
+		if(data.type === "TextGeometry")
+				return data;
+
 		if ( this.parameters !== undefined ) {
 
 			var parameters = this.parameters;
@@ -12288,10 +12296,18 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 
 		}
 
+		var colors = [];
+
+		for ( var i = 0; i < this.colors.length; i ++ ) {
+			
+			var color = this.colors[ i ];
+			colors.push( color.toArray() );
+
+		}
+
 		var faces = [];
 		var normals = [];
 		var normalsHash = {};
-		var colors = [];
 		var colorsHash = {};
 		var uvs = [];
 		var uvsHash = {};
@@ -18916,7 +18932,7 @@ function WebGLTextures( _gl, extensions, state, properties, capabilities, utils,
 
 		var image = clampToMaxSize( texture.image, capabilities.maxTextureSize );
 
-		if ( textureNeedsPowerOfTwo( texture ) && isPowerOfTwo( image ) === false ) {
+		if ( textureNeedsPowerOfTwo( texture ) /*&& isPowerOfTwo( image ) === false*/ ) {
 
 			image = makePowerOfTwo( image );
 
@@ -23924,7 +23940,7 @@ function WebGL2Renderer( parameters ) {
 
 	return {
 		domElement: _canvas,
-
+		domContext: gl,
 		clear: clear,
 		setPixelRatio: setPixelRatio,
 		setSize: setSize,
@@ -25313,11 +25329,6 @@ function VideoTexture( video, mapping, wrapS, wrapT, magFilter, minFilter, forma
 	}
 
     video.addEventListener( 'loadeddata', onLoaded, false );
-    // audioTimerLoop(update,33);
-    // webWorkerSetInterval(function(){
-    //     update();
-    // },33);    
-    this.update = update;
 }
 
 
@@ -28656,7 +28667,8 @@ function TextBufferGeometry( text, parameters ) {
 	var font = parameters.font;
 
 	if ( ! ( font && font.isFont ) ) {
-		font = new THREE.Font(font.data);
+		//font = new THREE.Font(font.data);
+		return new Geometry();
 	}
 
 	var shapes = font.generateShapes( text, parameters.size, parameters.curveSegments );
@@ -31404,7 +31416,7 @@ function ImageLoader( manager ) {
 Object.assign( ImageLoader.prototype, {
 
 	crossOrigin: 'Anonymous',
-	load: function ( name, url, onLoad, onProgress, onError ) {
+	load: function ( url, onLoad, onProgress, onError ) {
 		if ( url === undefined ) url = '';
 
 		if ( this.path !== undefined ) url = this.path + url;
@@ -31470,7 +31482,6 @@ Object.assign( ImageLoader.prototype, {
 
 		scope.manager.itemStart( url );
 
-        image.name = name;
 		image.src = url;
 
 		return image;
@@ -31583,9 +31594,7 @@ Object.assign( TextureLoader.prototype, {
 		loader.setCrossOrigin( this.crossOrigin );
 		loader.setPath( this.path );
 
-		loader.load( url, function ( image ) {
-
-			texture.image = image;
+		texture.image = loader.load( url, function () {
 
 			// JPEGs can't have an alpha channel, so memory can be saved by storing them as RGB.
 			var isJPEG = url.search( /\.(jpg|jpeg)$/ ) > 0 || url.search( /^data\:image\/jpeg/ ) === 0;
@@ -36520,7 +36529,7 @@ Object.assign( JSONLoader.prototype, {
             hasFaceNormal, hasFaceVertexNormal,
             hasFaceColor, hasFaceVertexColor,
 
-            vertex, face, faceA, faceB, hex, normal,
+            vertex, face, faceA, faceB, hex, normal, color,
 
             uvLayer, uv, u, v,
 
@@ -36795,6 +36804,16 @@ Object.assign( JSONLoader.prototype, {
 
 				}
 
+			}
+
+			offset = 0;
+			if(colors){
+				zLength = colors.length;
+
+				while ( offset < zLength) {
+					color = new THREE.Color().fromArray(colors[offset ++ ]);
+					geometry.colors.push( color );
+				}
 			}
 
 		}
@@ -37320,12 +37339,12 @@ Object.assign( ObjectLoader.prototype, {
 
 						break;
 					
-					case 'TextGeometry':
-						geometry = new Geometries[ data.type ](
-							data.text,
-							data.parameters
-						);
-						break;
+					// case 'TextGeometry':
+					// 	geometry = new Geometries[ data.type ](
+					// 		data.text,
+					// 		data.parameters
+					// 	);
+					// 	break;
 					
 
 					default:
@@ -37416,7 +37435,7 @@ Object.assign( ObjectLoader.prototype, {
 
 			scope.manager.itemStart( url );
 
-			return loader.load( name, url, function () {
+			return loader.load( url, function () {
 
 				scope.manager.itemEnd( url );
 
@@ -37451,8 +37470,6 @@ Object.assign( ObjectLoader.prototype, {
 					/*BIG HACK!!! Remove from here asap */
 					if (editor && editor.timeliner)
 						editor.timeliner.repaint();
-					if (window.ui && ui.angular)
-						ui.angular.$rootScope.$digest();
 				};
 				images[uuid].onerror = function () {
 					this.setAttribute('network-error', 'true');
@@ -37748,7 +37765,7 @@ Object.assign( ObjectLoader.prototype, {
 					var geometry = getGeometry( data.geometry );
 					var material = getMaterial( data.material );
 
-					if ( geometry.bones && geometry.bones.length > 0 ) {
+					if ( geometry && geometry.bones && geometry.bones.length > 0 ) {
 
 						object = new SkinnedMesh( geometry, material );
 
@@ -37857,7 +37874,19 @@ Object.assign( ObjectLoader.prototype, {
 			if ( data.children !== undefined ) {
 				var children = data.children;
 				for ( var i = 0; i < children.length; i ++ ) {
-					object.add( this.parseObject( children[ i ], geometries, materials ) );
+					if(children[ i ].userData && children[ i ].userData.info)
+						Objectck.addObject(children[ i ].userData.info,children[ i ],object).then(function(data){
+							if(data.parent.type === "Scene")
+								editor.execute(new AddObjectCommand(data.child));
+							else
+								data.parent.add(data.child);
+							ck.updateTotalTime();
+							profiler.object_profiler(data.child,0,0,true);
+							if(editor && editor.timeliner)
+								editor.timeliner.dispatcher.fire('controls.stop');
+						});
+					else
+						object.add( this.parseObject( children[ i ], geometries, materials ) );
 				}
 				
 			}

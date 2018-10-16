@@ -26602,7 +26602,7 @@
 	 * @author mrdoob / http://mrdoob.com/
 	 */
 
-	function VideoTexture$1( video, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy ) {
+	function VideoTexture( video, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy ) {
 
 		Texture.call( this, video, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy );
 
@@ -26611,8 +26611,8 @@
 	}
 
 
-	VideoTexture$1.prototype = Object.assign( Object.create( Texture.prototype ), {
-		constructor: VideoTexture$1,
+	VideoTexture.prototype = Object.assign( Object.create( Texture.prototype ), {
+		constructor: VideoTexture,
 		isVideoTexture: true,
 		update: function () {
 
@@ -48159,7 +48159,7 @@
 	exports.Line = Line;
 	exports.Points = Points;
 	exports.Group = Group;
-	exports.VideoTexture = VideoTexture$1;
+	exports.VideoTexture = VideoTexture;
 	exports.DataTexture = DataTexture;
 	exports.DataTexture3D = DataTexture3D;
 	exports.CompressedTexture = CompressedTexture;

@@ -44,6 +44,7 @@ import { PerspectiveCamera } from '../cameras/PerspectiveCamera.js';
 import { Scene } from '../scenes/Scene.js';
 import { CubeTexture } from '../textures/CubeTexture.js';
 import { Texture } from '../textures/Texture.js';
+import { VideoTexture } from '../textures/VideoTexture';
 import { ImageLoader } from './ImageLoader.js';
 import { LoadingManager, DefaultLoadingManager } from './LoadingManager.js';
 import { AnimationClip } from '../animation/AnimationClip.js';

@@ -65,15 +65,9 @@
 
 			var statsEnabled = true;
 
-			var container, stats, loader;
+			var container, stats;
 
-			var camera, scene, renderer;
-
-			var controls;
-
-			var mesh;
-
-			var spotLight;
+			var camera, scene, renderer, controls;
 
 			init();
 			animate();
@@ -105,16 +99,6 @@
 				//
 
 				scene.add( new THREE.HemisphereLight( 0x443333, 0x222233, 4 ) );
-
-				//
-
-				new THREE.CubeTextureLoader()
-					.setPath( 'textures/cube/pisa/' )
-					.load( [ 'px.png', 'nx.png', 'py.png', 'ny.png', 'pz.png', 'nz.png' ], function ( textureCube ) {
-
-						scene.background = textureCube;
-
-					} );
 
 				//
 
@@ -156,12 +140,14 @@
 
 					} );
 
-				var genCubeUrls = function( prefix, postfix ) {
+				var genCubeUrls = function ( prefix, postfix ) {
+
 					return [
 						prefix + 'px' + postfix, prefix + 'nx' + postfix,
 						prefix + 'py' + postfix, prefix + 'ny' + postfix,
 						prefix + 'pz' + postfix, prefix + 'nz' + postfix
 					];
+
 				};
 
 				var hdrUrls = genCubeUrls( './textures/cube/pisaHDR/', '.hdr' );
@@ -178,7 +164,10 @@
 					material.envMap = hdrCubeRenderTarget.texture;
 					material.needsUpdate = true; // is this needed?
 
-					hdrCubeMap.dispose();
+					hdrCubeMap.magFilter = THREE.LinearFilter;
+					hdrCubeMap.needsUpdate = true;
+					scene.background = hdrCubeMap;
+
 					pmremGenerator.dispose();
 					pmremCubeUVPacker.dispose();
 
@@ -199,7 +188,7 @@
 
 			//
 
-			function onWindowResize( event ) {
+			function onWindowResize() {
 
 				renderer.setSize( window.innerWidth, window.innerHeight );
 

@@ -2725,6 +2725,12 @@ var ImageUtils = {
 
 	getDataURL: function ( image ) {
 
+		if(image.src !== undefined){
+			return image.src;
+		} else{
+			return "";
+		}
+
 		var canvas;
 
 		if ( typeof HTMLCanvasElement == 'undefined' ) {
